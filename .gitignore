@@ -1,0 +1,8 @@
+.DS_Store
+AssignmentTracker/build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+# Local secrets and config (never commit)
+*.local.xcconfig
+Secrets.xcconfig
