@@ -8,6 +8,7 @@ struct AssignmentDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isEditing = false
     @State private var isConfirmingDelete = false
+    @FocusState private var isAddingStep: Bool
 
     var body: some View {
         ScrollView {
@@ -32,7 +33,7 @@ struct AssignmentDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
 
-                StepsCard(assignment: assignment)
+                StepsCard(assignment: assignment, isAddFieldFocused: $isAddingStep)
 
                 if !assignment.notes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -70,9 +71,12 @@ struct AssignmentDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            completeButton
-                .padding(.horizontal, 20)
-                .padding(.bottom, 8)
+            // Hidden while typing a step so it doesn't ride up over the card on the keyboard.
+            if !isAddingStep {
+                completeButton
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+            }
         }
         .sheet(isPresented: $isEditing) {
             AssignmentEditorSheet(assignment: assignment)

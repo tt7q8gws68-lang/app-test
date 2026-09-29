@@ -3,10 +3,11 @@ import SwiftUI
 
 struct StepsCard: View {
     let assignment: Assignment
+    /// Owned by the detail screen so it can hide its bottom button while the keyboard is up.
+    var isAddFieldFocused: FocusState<Bool>.Binding
 
     @Environment(\.modelContext) private var modelContext
     @State private var newStepTitle = ""
-    @FocusState private var isAddFieldFocused: Bool
 
     private var steps: [Step] { assignment.sortedSteps }
 
@@ -58,7 +59,7 @@ struct StepsCard: View {
                     .foregroundStyle(.tint)
                     .frame(width: 24, height: 24)
                 TextField("Add step", text: $newStepTitle)
-                    .focused($isAddFieldFocused)
+                    .focused(isAddFieldFocused)
                     .submitLabel(.done)
                     .onSubmit(addStep)
             }
@@ -77,7 +78,7 @@ struct StepsCard: View {
             assignment.steps.append(Step(title: title, sortIndex: nextIndex))
         }
         newStepTitle = ""
-        isAddFieldFocused = true
+        isAddFieldFocused.wrappedValue = true
     }
 
     private func delete(_ step: Step) {
