@@ -46,7 +46,7 @@ nonisolated struct RuleBasedSyllabusParser {
 
             // "Oct 20: Quiz 3; Lab report 2 due" – later segments share the line's date.
             let lineDate = finder.firstExpression(in: body)?.text
-            for segment in body.components(separatedBy: ";") {
+            for segment in Self.segments(of: body) {
                 guard let item = detectItem(in: segment, lineDate: lineDate, weekContext: weekContext, finder: finder)
                 else { continue }
                 if item.dateText == nil { undated.append(item) } else { dated.append(item) }
@@ -155,9 +155,25 @@ nonisolated struct RuleBasedSyllabusParser {
         return nil
     }
 
+    /// Splits a line into separate items at semicolons and sentence breaks
+    /// ("Panel data. Problem Set 3 due Oct 23").
+    static func segments(of line: String) -> [String] {
+        line.replacingOccurrences(of: #"(?<=[a-z0-9)])\.\s+(?=[A-Z])"#, with: ";", options: .regularExpression)
+            .components(separatedBy: ";")
+    }
+
     static func cleanTitle(_ text: String, removing dateRange: Range<String.Index>?) -> String {
         var working = text
-        if let dateRange { working.replaceSubrange(dateRange, with: " ") }
+        if let dateRange {
+            // "Final Exam: Friday, December 11, 9 AM – noon, Hall B" – what follows the date
+            // is logistics when the part before it already names the item.
+            let before = String(text[..<dateRange.lowerBound])
+            if kind(of: before) != nil, !before.contains("|") {
+                working = before
+            } else {
+                working.replaceSubrange(dateRange, with: " ")
+            }
+        }
 
         // Table rows: keep the column that names the item.
         let columns = working.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
@@ -228,6 +244,7 @@ nonisolated struct RuleBasedSyllabusParser {
         regex(#"(?:,|\bat|\bby|@)?\s*\b\d{1,2}(?::\d{2})?\s*[ap]\.?\s?m\b\.?"#),
         regex(#"\(?\s*\d{1,3}(?:\.\d+)?\s*%(?:\s*of (?:the )?(?:final )?grade)?\s*\)?"#),
         regex(#"\(?\s*\d{1,4}\s*(?:pts|points)\s*\)?"#),
+        regex(#"\s*[—–-]?\s*\bdate\s*$"#),
         regex(#"\b(is |are )?(due|by|at|on)\b(?=\W*$)"#),
         regex(#"^\s*(?:[-•*·]|\d{1,2}[.)])\s+"#),
         regex(#"^\s*(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*\.?\s*[:,\-–]\s*"#),
