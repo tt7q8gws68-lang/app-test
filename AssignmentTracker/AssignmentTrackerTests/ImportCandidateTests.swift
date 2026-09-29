@@ -112,3 +112,57 @@ struct FoundationModelParserHelpersTests {
         #expect(detected?.dateText == nil)
     }
 }
+
+struct DetectionMergeTests {
+    @Test func rulesDateWinsWhenBothFindAnItem() {
+        let model = [DetectedItem(title: "Problem Set 1", kind: .assignment, dateText: "Week 2, Fri")]
+        let rules = [DetectedItem(title: "Problem Set 1", kind: .assignment, dateText: "Week 3, Fri", notes: "From syllabus: Fri: Problem Set 1 due")]
+        let merged = SyllabusAnalyzer.merge(model: model, rules: rules)
+        #expect(merged.count == 1)
+        #expect(merged[0].dateText == "Week 3, Fri")
+        #expect(merged[0].notes == "From syllabus: Fri: Problem Set 1 due")
+    }
+
+    @Test func addsItemsOnlyTheRulesFound() {
+        let model = [DetectedItem(title: "Midterm Exam", kind: .exam, dateText: "Oct 15")]
+        let rules = [
+            DetectedItem(title: "Midterm Exam", kind: .exam, dateText: "Oct 15"),
+            DetectedItem(title: "Guest lecture reflection", kind: .assignment, dateText: "TBA"),
+        ]
+        #expect(SyllabusAnalyzer.merge(model: model, rules: rules).map(\.title) == ["Midterm Exam", "Guest lecture reflection"])
+    }
+
+    @Test func skipsNearDuplicatesOnTheSameDay() {
+        let model = [DetectedItem(title: "Midterm", kind: .exam, dateText: "Thursday, October 15")]
+        let rules = [DetectedItem(title: "Midterm Exam", kind: .exam, dateText: "Thursday, October 15, 10:00 AM")]
+        let resolver = SyllabusDateResolver(calendar: Fixtures.calendar, referenceDate: Fixtures.today)
+        let merged = SyllabusAnalyzer.merge(model: model, rules: rules) { a, b in
+            Fixtures.calendar.isDate(resolver.resolve(a!).date!, inSameDayAs: resolver.resolve(b!).date!)
+        }
+        #expect(merged.count == 1)
+    }
+
+    @Test func keepsSimilarTitlesOnDifferentDays() {
+        let model = [DetectedItem(title: "Problem Set 1", kind: .assignment, dateText: "Sep 18")]
+        let rules = [DetectedItem(title: "Problem Set 10", kind: .assignment, dateText: "Dec 4")]
+        #expect(SyllabusAnalyzer.merge(model: model, rules: rules).count == 2)
+    }
+
+    @Test func categoryWeightIsNotCopiedToMembers() {
+        let source = "Problem Sets (5) ........ 25%\nMidterm Exam ........ 20%\nWeek 5\nFri: Problem Set 2 due"
+        let problemSet = GeneratedItem(title: "Problem Set 2", kind: .assignment, dateText: "Week 5, Fri", weight: "25%", details: "")
+        let midterm = GeneratedItem(title: "Midterm Exam", kind: .exam, dateText: "", weight: "20%", details: "")
+        #expect(FoundationModelSyllabusParser.detectedItem(from: problemSet, source: source)?.weight == nil)
+        #expect(FoundationModelSyllabusParser.detectedItem(from: midterm, source: source)?.weight == "20%")
+    }
+
+    @Test(arguments: [
+        ("Midterm", "Midterm Exam", true),
+        ("Problem Set 1", "Problem Set 10", false),
+        ("Essay", "Essay 2", true),
+        ("Quiz 1", "Quiz 2", false),
+    ])
+    func titleMatching(a: String, b: String, matches: Bool) {
+        #expect(RuleBasedSyllabusParser.titlesMatch(a, b) == matches)
+    }
+}

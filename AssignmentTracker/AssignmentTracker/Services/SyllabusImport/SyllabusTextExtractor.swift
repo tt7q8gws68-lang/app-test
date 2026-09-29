@@ -63,13 +63,14 @@ nonisolated struct ExtractedSyllabus: Sendable {
 /// with no text layer), Vision for images, a small ZIP/XML reader for .docx, and Foundation
 /// for plain text and RTF.
 nonisolated struct SyllabusTextExtractor {
-    static let maxFileSize: Int64 = 20 * 1024 * 1024
+    static let maxFileSize: Int64 = 20_000_000
     static let docxType = UTType("org.openxmlformats.wordprocessingml.document") ?? .data
     static let supportedTypes: [UTType] = [.pdf, docxType, .plainText, .rtf, .image]
 
     /// Below this many characters a PDF page is treated as scanned and sent to OCR.
     private static let minimumPageText = 25
 
+    @concurrent
     func extract(from url: URL) async throws -> ExtractedSyllabus {
         let isScoped = url.startAccessingSecurityScopedResource()
         defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
@@ -94,6 +95,7 @@ nonisolated struct SyllabusTextExtractor {
         return try await extract(data: data, type: type, name: name)
     }
 
+    @concurrent
     func extract(data: Data, type: UTType, name: String) async throws -> ExtractedSyllabus {
         guard !data.isEmpty else { throw SyllabusImportError.emptyFile }
         guard Int64(data.count) <= Self.maxFileSize else {
@@ -132,6 +134,7 @@ nonisolated struct SyllabusTextExtractor {
     }
 
     /// Photos and document-camera scans.
+    @concurrent
     func extract(images: [CGImage], name: String) async throws -> ExtractedSyllabus {
         var pages: [String] = []
         for image in images {

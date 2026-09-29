@@ -20,6 +20,7 @@ struct AssignmentsView: View {
     @State private var filter: Filter = .all
     @State private var searchText = ""
     @State private var isAddingAssignment = false
+    @State private var isImportingSyllabus = false
 
     var body: some View {
         NavigationStack {
@@ -60,6 +61,11 @@ struct AssignmentsView: View {
             .navigationSubtitle(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
             .searchable(text: $searchText, prompt: "Search assignments")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Import Syllabus", systemImage: "doc.text.viewfinder") {
+                        isImportingSyllabus = true
+                    }
+                }
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
@@ -74,6 +80,9 @@ struct AssignmentsView: View {
             }
             .sheet(isPresented: $isAddingAssignment) {
                 AssignmentEditorSheet()
+            }
+            .sheet(isPresented: $isImportingSyllabus) {
+                SyllabusImportSheet()
             }
         }
     }

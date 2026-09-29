@@ -3,12 +3,26 @@ import SwiftUI
 struct CourseChips: View {
     let courses: [Course]
     @Binding var selection: Course?
+    /// When set, a trailing "New Course" chip calls this.
+    var onAddCourse: (() -> Void)?
 
     var body: some View {
         GlassEffectContainer {
             FlowLayout(spacing: 8) {
                 ForEach(courses) { course in
                     chip(for: course)
+                }
+                if let onAddCourse {
+                    Button(action: onAddCourse) {
+                        Label("New Course", systemImage: "plus")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 16)
+                            .frame(height: 44)
+                            .contentShape(.capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: .capsule)
                 }
             }
         }

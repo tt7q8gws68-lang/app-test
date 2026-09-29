@@ -53,9 +53,12 @@ nonisolated struct RuleBasedSyllabusParser {
             }
         }
 
-        // Grading breakdown lines ("Midterm Exam ..... 25%") lend their weight to dated items.
+        // Grading breakdown lines ("Midterm Exam ..... 25%") lend their weight to dated items
+        // with the same name. A category line ("Problem Sets ..... 25%") is the category's
+        // total, so it isn't copied onto each problem set.
         for index in dated.indices where dated[index].weight == nil {
-            if let match = undated.first(where: { $0.weight != nil && Self.titlesMatch($0.title, dated[index].title) }) {
+            let title = Self.normalized(dated[index].title)
+            if let match = undated.first(where: { $0.weight != nil && Self.normalized($0.title) == title }) {
                 dated[index].weight = match.weight
             }
         }
@@ -193,10 +196,13 @@ nonisolated struct RuleBasedSyllabusParser {
         return first.uppercased() + working.dropFirst()
     }
 
+    /// Whether one title's words appear, in order, within the other's
+    /// ("Midterm" ~ "Midterm Exam", but not "Problem Set 1" ~ "Problem Set 10").
     static func titlesMatch(_ a: String, _ b: String) -> Bool {
-        let x = normalized(a), y = normalized(b)
+        let x = normalized(a).split(separator: " "), y = normalized(b).split(separator: " ")
         guard !x.isEmpty, !y.isEmpty else { return false }
-        return x.contains(y) || y.contains(x)
+        let (short, long) = x.count <= y.count ? (x, y) : (y, x)
+        return (0...(long.count - short.count)).contains { Array(long[$0..<($0 + short.count)]) == short }
     }
 
     static func normalized(_ title: String) -> String {

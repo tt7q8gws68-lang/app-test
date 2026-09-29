@@ -100,14 +100,29 @@ nonisolated struct FoundationModelSyllabusParser {
         guard !words.isEmpty, Double(found.count) / Double(words.count) >= 0.5 else { return nil }
 
         let dateText = item.dateText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let weight = item.weight.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rawWeight = item.weight.trimmingCharacters(in: .whitespacesAndNewlines)
+        var weight = rawWeight.isEmpty ? nil : RuleBasedSyllabusParser.weight(in: rawWeight) ?? rawWeight
+        if let stated = weight, !lineStates(weight: stated, for: title, in: source) {
+            weight = nil
+        }
         return DetectedItem(
             title: title,
             kind: item.kind.assignmentKind,
             dateText: dateText.isEmpty ? nil : dateText,
-            weight: weight.isEmpty ? nil : RuleBasedSyllabusParser.weight(in: weight) ?? weight,
+            weight: weight,
             notes: item.details.trimmingCharacters(in: .whitespacesAndNewlines)
         )
+    }
+
+    /// True when a single line names the item and gives the weight. The model tends to copy a
+    /// category's total ("Problem Sets (5) … 25%") onto every member.
+    static func lineStates(weight: String, for title: String, in source: String) -> Bool {
+        let number = weight.filter { $0.isNumber || $0 == "." }
+        let normalizedTitle = RuleBasedSyllabusParser.normalized(title)
+        guard !number.isEmpty, !normalizedTitle.isEmpty else { return false }
+        return source.components(separatedBy: .newlines).contains { line in
+            line.contains(number) && RuleBasedSyllabusParser.normalized(line).contains(normalizedTitle)
+        }
     }
 }
 
