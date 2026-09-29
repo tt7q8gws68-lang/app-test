@@ -26,7 +26,7 @@ struct AssignmentDetailView: View {
                         InfoTile(
                             label: "Priority",
                             value: assignment.priority.label,
-                            detail: nil,
+                            detail: assignment.weight.map { $0.hasSuffix("%") ? "\($0) of grade" : $0 },
                             valueColor: assignment.priority.color
                         )
                     }
@@ -97,17 +97,26 @@ struct AssignmentDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let course = assignment.course {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(course.color)
-                        .frame(width: 8, height: 8)
-                    Text(course.name)
+            HStack(spacing: 8) {
+                if let course = assignment.course {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(course.color)
+                            .frame(width: 8, height: 8)
+                        Text(course.name)
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .frame(height: 30)
+                    .glassEffect(.regular, in: .capsule)
                 }
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, 12)
-                .frame(height: 30)
-                .glassEffect(.regular, in: .capsule)
+                if assignment.kind != .assignment {
+                    Label(assignment.kind.label, systemImage: assignment.kind.systemImage)
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .frame(height: 30)
+                        .glassEffect(.regular, in: .capsule)
+                }
             }
 
             Text(assignment.title)

@@ -14,6 +14,9 @@ final class Assignment {
     var completedAt: Date?
     var createdAt: Date
     var course: Course?
+    var kind: AssignmentKind = AssignmentKind.assignment
+    /// Share of the final grade as written in the syllabus, e.g. "15%" or "50 pts".
+    var weight: String?
 
     @Relationship(deleteRule: .cascade, inverse: \Step.assignment)
     var steps: [Step] = []
@@ -23,7 +26,9 @@ final class Assignment {
         notes: String = "",
         dueDate: Date,
         priority: Priority = .medium,
-        remindDayBefore: Bool = false
+        remindDayBefore: Bool = false,
+        kind: AssignmentKind = .assignment,
+        weight: String? = nil
     ) {
         self.reminderID = UUID()
         self.title = title
@@ -34,6 +39,8 @@ final class Assignment {
         self.isCompleted = false
         self.completedAt = nil
         self.createdAt = .now
+        self.kind = kind
+        self.weight = weight
     }
 
     var sortedSteps: [Step] {
