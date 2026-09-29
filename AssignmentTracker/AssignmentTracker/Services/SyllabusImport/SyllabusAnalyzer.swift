@@ -38,7 +38,7 @@ nonisolated struct SyllabusAnalyzer {
                     return SyllabusAnalysis(items: rules.items, termStart: rules.termStart, engine: .rules(reason: "Apple Intelligence found nothing"))
                 }
                 let modelTermStart = model.termStartText
-                    .flatMap { resolver.resolve($0).date }
+                    .flatMap { Self.isStatedAsTermStart($0, in: text) ? resolver.resolve($0).date : nil }
                     .map { calendar.startOfDay(for: $0) }
                 let termStart = rules.termStart ?? modelTermStart
                 var dayResolver = resolver
@@ -55,6 +55,18 @@ nonisolated struct SyllabusAnalyzer {
             } catch {
                 return SyllabusAnalysis(items: rules.items, termStart: rules.termStart, engine: .rules(reason: "Apple Intelligence couldn’t read this syllabus"))
             }
+        }
+    }
+
+    /// Accepts the model's semester start only when a line of the syllabus gives that date
+    /// as the start ("Classes begin …"). Otherwise the model tends to offer the first date it
+    /// sees, which would silently shift every "Week N" date.
+    static func isStatedAsTermStart(_ dateText: String, in text: String) -> Bool {
+        let needle = dateText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty else { return false }
+        return text.components(separatedBy: .newlines).contains { line in
+            line.localizedCaseInsensitiveContains(needle)
+                && SyllabusDateResolver.termStartCue.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)) != nil
         }
     }
 
@@ -77,7 +89,8 @@ nonisolated struct SyllabusAnalyzer {
                 let rule = rules[index]
                 if let date = rule.dateText { item.dateText = date }
                 if item.weight == nil { item.weight = rule.weight }
-                if item.notes.isEmpty { item.notes = rule.notes }
+                // The syllabus line itself says more than the model's paraphrase.
+                if !rule.notes.isEmpty { item.notes = rule.notes }
             }
             merged.append(item)
         }

@@ -41,14 +41,18 @@ struct CandidateEditorSheet: View {
                     .glassCard()
 
                     VStack(spacing: 0) {
-                        Picker(selection: $draft.kind) {
-                            ForEach(AssignmentKind.allCases) { kind in
-                                Label(kind.label, systemImage: kind.systemImage).tag(kind)
-                            }
-                        } label: {
+                        HStack {
                             RowLabel("Type", systemImage: draft.kind.systemImage)
+                            Spacer()
+                            // Outside a Form a menu picker shows only its button, so label it here.
+                            Picker("Type", selection: $draft.kind) {
+                                ForEach(AssignmentKind.allCases) { kind in
+                                    Label(kind.label, systemImage: kind.systemImage).tag(kind)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .labelsHidden()
                         }
-                        .pickerStyle(.menu)
                         .frame(minHeight: 52)
 
                         Divider()

@@ -86,6 +86,19 @@ struct RuleBasedSyllabusParserTests {
         #expect(parser.parse(text).items.map(\.title) == ["Essay 1"])
     }
 
+    @Test func policySentenceDoesNotBorrowADate() {
+        let text = "Classes begin Monday, August 31, 2026. All problem sets are submitted on Canvas by 11:59 PM on the due date."
+        let result = parser.parse(text)
+        #expect(result.items.isEmpty)
+        #expect(result.termStart == Fixtures.date(2026, 8, 31))
+    }
+
+    @Test func dateDoesNotCarryIntoTheNextSentence() {
+        let items = parser.parse("Oct 12: review session. Essay 2 due at the end of term").items
+        #expect(items.count == 1)
+        #expect(items[0].dateText == nil)
+    }
+
     @Test func splitsSeveralItemsOnOneLine() {
         let items = parser.parse("Oct 20: Quiz 3; Lab report 2 due").items
         #expect(items.map(\.title) == ["Quiz 3", "Lab report 2"])

@@ -44,12 +44,15 @@ nonisolated struct RuleBasedSyllabusParser {
                 body = header.rest
             }
 
-            // "Oct 20: Quiz 3; Lab report 2 due" – later segments share the line's date.
-            let lineDate = finder.firstExpression(in: body)?.text
-            for segment in Self.segments(of: body) {
-                guard let item = detectItem(in: segment, lineDate: lineDate, weekContext: weekContext, finder: finder)
-                else { continue }
-                if item.dateText == nil { undated.append(item) } else { dated.append(item) }
+            for sentence in Self.sentences(of: body) {
+                // "Oct 20: Quiz 3; Lab report 2 due" – items in one sentence share its date,
+                // but a date never carries over into the next sentence.
+                let sentenceDate = finder.firstExpression(in: sentence)?.text
+                for segment in sentence.components(separatedBy: ";") {
+                    guard let item = detectItem(in: segment, lineDate: sentenceDate, weekContext: weekContext, finder: finder)
+                    else { continue }
+                    if item.dateText == nil { undated.append(item) } else { dated.append(item) }
+                }
             }
         }
 
@@ -158,11 +161,10 @@ nonisolated struct RuleBasedSyllabusParser {
         return nil
     }
 
-    /// Splits a line into separate items at semicolons and sentence breaks
-    /// ("Panel data. Problem Set 3 due Oct 23").
-    static func segments(of line: String) -> [String] {
-        line.replacingOccurrences(of: #"(?<=[a-z0-9)])\.\s+(?=[A-Z])"#, with: ";", options: .regularExpression)
-            .components(separatedBy: ";")
+    /// Splits a line at sentence breaks ("Panel data. Problem Set 3 due Oct 23").
+    static func sentences(of line: String) -> [String] {
+        line.replacingOccurrences(of: #"(?<=[a-z0-9)])\.\s+(?=[A-Z])"#, with: "\u{1E}", options: .regularExpression)
+            .components(separatedBy: "\u{1E}")
     }
 
     static func cleanTitle(_ text: String, removing dateRange: Range<String.Index>?) -> String {
@@ -241,7 +243,7 @@ nonisolated struct RuleBasedSyllabusParser {
     private static let weekHeaderPattern = regex(#"^\s*(?:week|wk\.?)\s*(\d{1,2})\b\s*[:.\-–—]?\s*"#)
     private static let dueCue = regex(#"\b(due|submit|turn in|hand in)\b"#)
     /// Policy and logistics lines that mention keywords but aren't graded items.
-    private static let ignoredLine = regex(#"\b(no class|holiday|break|office hours|late (work|policy|submissions?)|policy|accommodations?|academic integrity|drop deadline|withdraw)\b"#)
+    private static let ignoredLine = regex(#"\b(no class|holiday|break|office hours|late (work|policy|submissions?)|policy|accommodations?|academic integrity|drop deadline|withdraw)\b|^\s*(all|each|every|any|please)\b"#)
     private static let percentPattern = regex(#"(\d{1,3}(?:\.\d+)?)\s*%"#)
     private static let pointsPattern = regex(#"(\d{1,4})\s*(?:pts|points)\b"#)
     private static let timePattern = regex(#"\b\d{1,2}(?::\d{2})?\s*[ap]\.?\s?m\b\.?|\b(?:[01]?\d|2[0-3]):[0-5]\d\b"#)

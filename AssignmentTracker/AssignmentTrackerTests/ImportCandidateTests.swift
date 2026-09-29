@@ -156,6 +156,13 @@ struct DetectionMergeTests {
         #expect(FoundationModelSyllabusParser.detectedItem(from: midterm, source: source)?.weight == "20%")
     }
 
+    @Test func modelTermStartNeedsAStatedStart() {
+        let schedule = "Schedule of Assessments\nSep 30 | Growth accounting | Problem Set 2"
+        #expect(!SyllabusAnalyzer.isStatedAsTermStart("Sep 30", in: schedule))
+        let stated = "ECON 101\nClasses begin Monday, August 31, 2026."
+        #expect(SyllabusAnalyzer.isStatedAsTermStart("August 31, 2026", in: stated))
+    }
+
     @Test(arguments: [
         ("Midterm", "Midterm Exam", true),
         ("Problem Set 1", "Problem Set 10", false),
