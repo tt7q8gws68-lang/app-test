@@ -68,3 +68,15 @@ extension Date {
         return formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
     }
 }
+
+extension Date {
+    /// "Today", "Tomorrow", "Thu", or "Oct 12" for a planned work day.
+    func plannedLabel(now: Date = .now, calendar: Calendar = .current) -> String {
+        if calendar.isDateInToday(self) { return "Today" }
+        if calendar.isDateInTomorrow(self) { return "Tomorrow" }
+        if WeekWindow(now: now, calendar: calendar).contains(self) {
+            return formatted(.dateTime.weekday(.abbreviated))
+        }
+        return formatted(.dateTime.month(.abbreviated).day())
+    }
+}

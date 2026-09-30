@@ -89,6 +89,9 @@ nonisolated struct SyllabusAnalyzer {
                 matchedRules.insert(index)
                 let rule = rules[index]
                 if let date = rule.dateText { item.dateText = date }
+                // A keyword match ("Reading Check" → quiz) is more specific than the model's
+                // tendency to call everything an assignment.
+                if rule.kind != .assignment { item.kind = rule.kind }
                 if item.weight == nil { item.weight = rule.weight }
                 // The syllabus line itself says more than the model's paraphrase.
                 if !rule.notes.isEmpty { item.notes = rule.notes }

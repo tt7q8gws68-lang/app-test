@@ -33,6 +33,10 @@ struct AssignmentDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
 
+                if !assignment.isCompleted {
+                    PlanCard(assignment: assignment)
+                }
+
                 StepsCard(assignment: assignment, isAddFieldFocused: $isAddingStep)
 
                 if !assignment.notes.isEmpty {

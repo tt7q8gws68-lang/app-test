@@ -17,6 +17,8 @@ final class Assignment {
     var kind: AssignmentKind = AssignmentKind.assignment
     /// Share of the final grade as written in the syllabus, e.g. "15%" or "50 pts".
     var weight: String?
+    /// The day the person plans to work on it (start of day), separate from when it's due.
+    var plannedDate: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \Step.assignment)
     var steps: [Step] = []
@@ -49,6 +51,10 @@ final class Assignment {
 
     var tint: Color {
         course?.color ?? .accentColor
+    }
+
+    var completionRecord: CompletionRecord {
+        CompletionRecord(dueDate: dueDate, createdAt: createdAt, completedAt: isCompleted ? completedAt : nil)
     }
 
     func setCompleted(_ completed: Bool) {

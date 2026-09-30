@@ -16,6 +16,10 @@ struct AssignmentsView: View {
         var id: DueBucket { bucket }
     }
 
+    /// Current on-time streak, shown as a chip that opens the Streaks tab.
+    var streak = 0
+    var onShowStreaks: () -> Void = {}
+
     @Query(sort: \Assignment.dueDate) private var assignments: [Assignment]
     @State private var filter: Filter = .all
     @State private var searchText = ""
@@ -59,16 +63,29 @@ struct AssignmentsView: View {
             .background { AmbientBackground(variant: .list) }
             .navigationTitle("Assignments")
             .navigationSubtitle(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-            .searchable(text: $searchText, prompt: "Search assignments")
+            .searchable(text: $searchText, placement: .navigationBarDrawer, prompt: "Search assignments")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onShowStreaks) {
+                        // A plain HStack: toolbar buttons would reduce a Label to its icon.
+                        HStack(spacing: 4) {
+                            Image(systemName: "flame.fill")
+                                .foregroundStyle(streak > 0 ? AnyShapeStyle(.orange.gradient) : AnyShapeStyle(Palette.chevron))
+                            Text("\(streak)")
+                                .contentTransition(.numericText())
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 6)
+                    }
+                    .accessibilityLabel("Streak: \(streak) on time in a row")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Import Syllabus", systemImage: "doc.text.viewfinder") {
                         isImportingSyllabus = true
                     }
                 }
-                DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                ToolbarSpacer(.flexible, placement: .bottomBar)
-                ToolbarItem(placement: .bottomBar) {
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("New Assignment", systemImage: "plus") {
                         isAddingAssignment = true
                     }

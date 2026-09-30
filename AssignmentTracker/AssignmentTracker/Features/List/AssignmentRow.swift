@@ -43,6 +43,12 @@ struct AssignmentRow: View {
                             Text(assignment.dueDate.dueRowLabel())
                                 .foregroundStyle(isOverdue ? Palette.danger : Palette.secondaryText)
                                 .fixedSize()
+                            if let planned = assignment.plannedDate, !assignment.isCompleted {
+                                Label(planned.plannedLabel(), systemImage: "calendar.badge.clock")
+                                    .labelStyle(.iconOnly)
+                                    .foregroundStyle(Color.accentColor)
+                                    .accessibilityLabel("Planned for \(planned.plannedLabel())")
+                            }
                         }
                         .font(.footnote)
                         .foregroundStyle(Palette.secondaryText)
@@ -68,6 +74,15 @@ struct AssignmentRow: View {
                 systemImage: assignment.isCompleted ? "circle" : "checkmark.circle",
                 action: assignment.toggleCompleted
             )
+            if !assignment.isCompleted {
+                Menu("Plan to Work On", systemImage: "calendar.badge.clock") {
+                    Button("Today") { assignment.plan(for: .now) }
+                    Button("Tomorrow") { assignment.plan(for: Calendar.current.date(byAdding: .day, value: 1, to: .now)) }
+                    if assignment.plannedDate != nil {
+                        Button("Clear Plan", role: .destructive) { assignment.plan(for: nil) }
+                    }
+                }
+            }
             Button("Delete", systemImage: "trash", role: .destructive) {
                 assignment.delete(from: modelContext)
             }

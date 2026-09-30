@@ -15,7 +15,7 @@ struct AssignmentTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AssignmentsView()
+            RootView()
         }
         .modelContainer(container)
     }

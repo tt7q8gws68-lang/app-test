@@ -123,6 +123,12 @@ struct DetectionMergeTests {
         #expect(merged[0].notes == "From syllabus: Fri: Problem Set 1 due")
     }
 
+    @Test func rulesKindWinsWhenMoreSpecific() {
+        let model = [DetectedItem(title: "Reading Check 2", kind: .assignment, dateText: "Oct 29")]
+        let rules = [DetectedItem(title: "Reading Check 2", kind: .quiz, dateText: "Thu 10/29")]
+        #expect(SyllabusAnalyzer.merge(model: model, rules: rules)[0].kind == .quiz)
+    }
+
     @Test func addsItemsOnlyTheRulesFound() {
         let model = [DetectedItem(title: "Midterm Exam", kind: .exam, dateText: "Oct 15")]
         let rules = [
