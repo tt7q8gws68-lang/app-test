@@ -11,21 +11,23 @@ struct ImportReviewView: View {
     @State private var editing: ImportCandidate.ID?
 
     private enum Group: CaseIterable {
-        case check, ready, noDate, skipped
+        case check, ready, noDate, past, duplicate
 
         var title: String {
             switch self {
             case .check: "Check these dates"
             case .ready: "Ready to add"
             case .noDate: "Needs a date"
-            case .skipped: "Already passed or in this class"
+            case .past: "Already passed · added as done"
+            case .duplicate: "Already in this class"
             }
         }
     }
 
     private func group(of candidate: ImportCandidate) -> Group {
-        guard let due = candidate.dueDate else { return .noDate }
-        if candidate.duplicateOf != nil || due < Calendar.current.startOfDay(for: .now) { return .skipped }
+        guard candidate.dueDate != nil else { return .noDate }
+        if candidate.duplicateOf != nil { return .duplicate }
+        if candidate.isPast() { return .past }
         return candidate.reviewReason == nil ? .ready : .check
     }
 
@@ -54,7 +56,18 @@ struct ImportReviewView: View {
                         .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
                     if !items.isEmpty {
                         VStack(alignment: .leading, spacing: 10) {
-                            SectionHeader(group.title)
+                            HStack {
+                                SectionHeader(group.title)
+                                Spacer()
+                                if group == .past {
+                                    let allIncluded = items.allSatisfy(\.isIncluded)
+                                    Button(allIncluded ? "Skip All" : "Add All") {
+                                        withAnimation(.snappy) { model.setPastIncluded(!allIncluded) }
+                                    }
+                                    .font(.footnote.weight(.semibold))
+                                    .padding(.trailing, 4)
+                                }
+                            }
                             ForEach(items) { candidate in
                                 CandidateRow(
                                     candidate: candidate,
@@ -93,17 +106,24 @@ struct ImportReviewView: View {
         .navigationTitle("Review")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            Button {
-                model.save(in: modelContext)
-                onFinished()
-            } label: {
-                Text(saveTitle)
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 36)
+            VStack(spacing: 6) {
+                Button {
+                    model.save(in: modelContext)
+                    onFinished()
+                } label: {
+                    Text(saveTitle)
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .disabled(model.includedCount == 0)
+                if let saveFootnote {
+                    Text(saveFootnote)
+                        .font(.caption)
+                        .foregroundStyle(Palette.secondaryText)
+                }
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-            .disabled(model.includedCount == 0)
             .padding(.horizontal, 20)
             .padding(.bottom, 8)
         }
@@ -125,6 +145,12 @@ struct ImportReviewView: View {
         let count = model.includedCount
         let noun = count == 1 ? "Assignment" : "Assignments"
         return "Add \(count) \(noun) to \(model.course?.name ?? "Class")"
+    }
+
+    private var saveFootnote: String? {
+        let past = model.pastIncludedCount
+        guard past > 0 else { return nil }
+        return past == 1 ? "1 past item will be marked done" : "\(past) past items will be marked done"
     }
 
     // MARK: - Summary
@@ -176,7 +202,8 @@ struct ImportReviewView: View {
     }
 
     private var sourceDetail: String {
-        var parts = ["\(model.candidates.count) found"]
+        var parts = ["\(model.candidates.count) found", "\(model.includedCount) selected"]
+        if model.undatedCount > 0 { parts.append("\(model.undatedCount) need a date") }
         if model.pageCount > 1 { parts.append("\(model.pageCount) pages") }
         if model.recognizedPageCount > 0 {
             parts.append(model.recognizedPageCount == model.pageCount ? "text recognized from image" : "\(model.recognizedPageCount) scanned pages recognized")

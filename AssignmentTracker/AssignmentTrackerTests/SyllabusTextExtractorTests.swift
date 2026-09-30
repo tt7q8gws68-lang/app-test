@@ -132,6 +132,38 @@ struct SyllabusEndToEndTests {
         #expect(result.items.first { $0.title == "Midterm Exam" }?.weight == "20%")
     }
 
+    /// A 21-item syllabus whose schedule table has wrapped cells and several items per cell,
+    /// plus date headings with bullets. PDFKit's plain text scrambled it into 7 wrong items.
+    @Test func wrappedTableAndDateHeadingsFindEveryItem() async throws {
+        let text = try await SyllabusTextExtractor()
+            .extract(data: fixture("PSYC101_Psychology_Syllabus.pdf"), type: .pdf, name: "psyc.pdf").text
+        let result = RuleBasedSyllabusParser(calendar: Fixtures.calendar, referenceDate: Fixtures.today).parse(text)
+
+        #expect(result.termStart == Fixtures.date(2026, 8, 31))
+        #expect(result.items.map(\.title) == [
+            "Syllabus acknowledgment", "Discussion Post 1", "Worksheet 1: Designing a study", "Reading Check 1",
+            "Discussion Post 2", "Worksheet 2: Sleep diary analysis", "Discussion Post 3",
+            "Exam 1 (Chapters 1–6), in class", "Journal Entry 1: Memory experiment reflection", "Reading Check 2",
+            "Research Paper Milestone 1: Topic", "Discussion Post 4", "Worksheet 3: Emotion regulation strategies",
+            "Exam 2 (Chapters 7–11)", "Journal Entry 2", "Research Paper Milestone 2: Annotated bibliography",
+            "Lab participation form (SONA credits, part 1)", "Poster draft for peer review",
+            "Extra credit article summary", "Final research paper", "Cumulative final exam",
+        ])
+        #expect(result.items.filter { $0.kind == .exam }.count == 3)
+        #expect(result.items.filter { $0.kind == .quiz }.count == 2)
+        #expect(!result.items.contains { $0.kind == .reading }, "chapter citations in topics aren't readings")
+
+        let resolver = SyllabusDateResolver(calendar: Fixtures.calendar, termStart: result.termStart, referenceDate: Fixtures.today)
+        func due(_ title: String) throws -> Date? {
+            resolver.resolve(try #require(result.items.first { $0.title == title }?.dateText)).date
+        }
+        #expect(try due("Worksheet 1: Designing a study") == Fixtures.date(2026, 9, 8, 23, 59))
+        #expect(try due("Research Paper Milestone 2: Annotated bibliography") == Fixtures.date(2026, 12, 3, 23, 59))
+        #expect(try due("Lab participation form (SONA credits, part 1)") == Fixtures.date(2026, 10, 9, 23, 59))
+        #expect(try due("Extra credit article summary") == Fixtures.date(2026, 11, 30, 23, 59))
+        #expect(try due("Cumulative final exam") == Fixtures.date(2026, 12, 15, 10, 30))
+    }
+
     @Test func docxWithMismatchedWeekdayIsFlagged() async throws {
         let text = try await SyllabusTextExtractor()
             .extract(data: fixture("MoneyBanking_Syllabus.docx"), type: SyllabusTextExtractor.docxType, name: "mb.docx").text

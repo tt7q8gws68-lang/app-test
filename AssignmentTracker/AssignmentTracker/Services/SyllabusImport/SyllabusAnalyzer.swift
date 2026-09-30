@@ -19,8 +19,9 @@ nonisolated struct SyllabusAnalyzer {
     var calendar: Calendar = .current
     var referenceDate: Date = .now
 
+    /// `progress` gets (chunks read, total chunks) while the on-device model works.
     @concurrent
-    func analyze(_ text: String) async -> SyllabusAnalysis {
+    func analyze(_ text: String, progress: @Sendable (Int, Int) async -> Void = { _, _ in }) async -> SyllabusAnalysis {
         let rules = RuleBasedSyllabusParser(calendar: calendar, referenceDate: referenceDate).parse(text)
         let resolver = SyllabusDateResolver(calendar: calendar, referenceDate: referenceDate)
 
@@ -33,7 +34,7 @@ nonisolated struct SyllabusAnalyzer {
             return SyllabusAnalysis(items: rules.items, termStart: rules.termStart, engine: .rules(reason: unavailable.explanation))
         case .success:
             do {
-                let model = try await FoundationModelSyllabusParser().parse(text)
+                let model = try await FoundationModelSyllabusParser().parse(text, progress: progress)
                 guard !model.items.isEmpty || rules.items.isEmpty else {
                     return SyllabusAnalysis(items: rules.items, termStart: rules.termStart, engine: .rules(reason: "Apple Intelligence found nothing"))
                 }

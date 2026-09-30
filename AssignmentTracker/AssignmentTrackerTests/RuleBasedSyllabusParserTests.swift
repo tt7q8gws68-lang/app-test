@@ -105,6 +105,34 @@ struct RuleBasedSyllabusParserTests {
         #expect(items.map(\.dateText) == ["Oct 20", "Oct 20"])
     }
 
+    @Test func dateHeadingAppliesToBulletsBelowIt() {
+        let items = parser.parse("""
+            Key dates
+            Friday, October 9
+            • Lab participation form
+            • Quiz 2
+            Grading
+            Participation counts toward your final grade.
+            """).items
+        #expect(items.map(\.title) == ["Lab participation form", "Quiz 2"])
+        #expect(items.allSatisfy { $0.dateText == "Friday, October 9" })
+    }
+
+    @Test func tableRowYieldsOneItemPerCellPiece() {
+        let items = parser.parse("9 | Thu 10/29 | Cognition (Ch. 8) | Reading Check 2; Research Paper Milestone 1").items
+        #expect(items.map(\.title) == ["Reading Check 2", "Research Paper Milestone 1"])
+        #expect(items.allSatisfy { $0.dateText == "Thu 10/29" })
+    }
+
+    @Test func tableTopicsAndHeadersAreNotItems() {
+        let text = """
+            Wk | Date | Topic & Readings | Assignments Due
+            4 | Tue 9/22 | Hypothesis tests (Ch. 4) | Discussion Post 2
+            5 | Thu 10/1 | Midterm review session | Worksheet 2
+            """
+        #expect(parser.parse(text).items.map(\.title) == ["Discussion Post 2", "Worksheet 2"])
+    }
+
     @Test(arguments: [
         ("Final Project presentation", AssignmentKind.project),
         ("Final Exam", .exam),
@@ -115,6 +143,13 @@ struct RuleBasedSyllabusParserTests {
         ("Quiz 2", .quiz),
         ("Unit Test 1", .exam),
         ("Participation", nil),
+        ("Discussion Post 3", .assignment),
+        ("Worksheet 2: Sleep diary", .assignment),
+        ("Journal Entry 1", .assignment),
+        ("Reading Check 1", .quiz),
+        ("Memory (Ch. 7)", nil),
+        ("Hypothesis tests", nil),
+        ("Fri: Read pp. 40–62", .reading),
     ])
     func classifiesKinds(text: String, kind: AssignmentKind?) {
         #expect(RuleBasedSyllabusParser.kind(of: text) == kind)

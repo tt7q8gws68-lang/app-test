@@ -15,10 +15,11 @@ nonisolated struct SyllabusParseResult: Equatable, Sendable {
     var termStart: Date?
 }
 
-/// Line-by-line syllabus parser built on patterns. It's the fallback when the on-device
-/// language model isn't available, and it handles the common layouts: schedule tables
-/// ("Oct 12 | Problem Set 1 due | 5%"), week-by-week schedules ("Week 3" headers followed
-/// by "Fri: Quiz 1"), and grading breakdowns whose weights are matched back to dated items.
+/// Line-by-line syllabus parser built on patterns. It runs on every import (cross-checking the
+/// on-device model) and is the fallback when the model isn't available. It handles the common
+/// layouts: schedule tables ("Oct 12 | Topic | Problem Set 1; Quiz 2", one item per cell),
+/// week-by-week schedules ("Week 3" headers followed by "Fri: Quiz 1"), date headings with
+/// bullets under them, and grading breakdowns whose weights are matched back to dated items.
 nonisolated struct RuleBasedSyllabusParser {
     var calendar: Calendar = .current
     var referenceDate: Date = .now
@@ -31,11 +32,18 @@ nonisolated struct RuleBasedSyllabusParser {
         var dated: [DetectedItem] = []
         var undated: [DetectedItem] = []
         var weekContext: Int?
+        /// A date written on its own line ("Friday, October 9"), applied to the lines under it.
+        var dateHeading: String?
+
+        func record(_ item: DetectedItem) {
+            if item.dateText == nil { undated.append(item) } else { dated.append(item) }
+        }
 
         for line in lines {
             var body = line
             if let header = weekHeader(in: line) {
                 weekContext = header.week
+                dateHeading = nil
                 // "Week 3 (Sep 14–18)" also tells us when the term started.
                 if termStart == nil, let expression = finder.firstExpression(in: header.rest),
                    let date = finder.resolve(expression.text).date {
@@ -44,16 +52,53 @@ nonisolated struct RuleBasedSyllabusParser {
                 body = header.rest
             }
 
+            if let heading = Self.dateHeading(in: body, finder: finder) {
+                dateHeading = heading
+                continue
+            }
+
+            let cells = body.components(separatedBy: "|")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            if cells.count > 1 {
+                // A table row: every cell that names an item is its own item, sharing the row's date.
+                let rowDate = finder.firstExpression(in: body)?.text ?? dateHeading
+                var rowItems: [DetectedItem] = []
+                for cell in cells where Self.dateHeading(in: cell, finder: finder) == nil {
+                    for piece in Self.pieces(of: cell) {
+                        if let item = detectItem(in: piece, lineDate: rowDate, weekContext: weekContext, finder: finder) {
+                            rowItems.append(item)
+                        }
+                    }
+                }
+                // A weight in its own column ("Midterm Exam | 20%") belongs to the row's one item.
+                if rowItems.count == 1, rowItems[0].weight == nil,
+                   let weightCell = cells.first(where: { Self.isWeightOnly($0) }) {
+                    rowItems[0].weight = Self.weight(in: weightCell)
+                }
+                rowItems.forEach(record)
+                continue
+            }
+
+            // Items under a date heading are usually bulleted, and a bullet there is an item
+            // even without a keyword ("• Lab participation form").
+            let isBullet = Self.contains(Self.bulletPrefix, in: body)
+            var foundItem = false
             for sentence in Self.sentences(of: body) {
                 // "Oct 20: Quiz 3; Lab report 2 due" – items in one sentence share its date,
                 // but a date never carries over into the next sentence.
-                let sentenceDate = finder.firstExpression(in: sentence)?.text
+                let sentenceDate = finder.firstExpression(in: sentence)?.text ?? dateHeading
                 for segment in sentence.components(separatedBy: ";") {
-                    guard let item = detectItem(in: segment, lineDate: sentenceDate, weekContext: weekContext, finder: finder)
-                    else { continue }
-                    if item.dateText == nil { undated.append(item) } else { dated.append(item) }
+                    guard let item = detectItem(
+                        in: segment, lineDate: sentenceDate, weekContext: weekContext, finder: finder,
+                        acceptsAnyTitle: isBullet && dateHeading != nil
+                    ) else { continue }
+                    record(item)
+                    foundItem = true
                 }
             }
+            // An ordinary line that isn't an item ends the dated block.
+            if !isBullet, !foundItem { dateHeading = nil }
         }
 
         // Grading breakdown lines ("Midterm Exam ..... 25%") lend their weight to dated items
@@ -99,10 +144,11 @@ nonisolated struct RuleBasedSyllabusParser {
     }
 
     private func detectItem(
-        in segment: String, lineDate: String?, weekContext: Int?, finder: SyllabusDateResolver
+        in segment: String, lineDate: String?, weekContext: Int?, finder: SyllabusDateResolver,
+        acceptsAnyTitle: Bool = false
     ) -> DetectedItem? {
         let text = segment.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty, Self.ignoredLine.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) == nil
+        guard !text.isEmpty, !Self.contains(Self.ignoredLine, in: text), !Self.contains(Self.columnHeader, in: text)
         else { return nil }
 
         let expression = finder.firstExpression(in: text)
@@ -115,7 +161,8 @@ nonisolated struct RuleBasedSyllabusParser {
         }
         let hasDueCue = Self.contains(Self.dueCue, in: text)
 
-        guard let kind = Self.kind(of: text) ?? ((dateText != nil && hasDueCue) ? .assignment : nil) else { return nil }
+        guard let kind = Self.kind(of: text) ?? ((dateText != nil && (hasDueCue || acceptsAnyTitle)) ? .assignment : nil)
+        else { return nil }
 
         // "Fri: Quiz 1" under a "Week 3" header.
         if dateText == nil, let weekContext {
@@ -161,6 +208,25 @@ nonisolated struct RuleBasedSyllabusParser {
         return nil
     }
 
+    /// The date text when a line is nothing but a date ("Friday, October 9", "Tue 9/8:").
+    static func dateHeading(in line: String, finder: SyllabusDateResolver) -> String? {
+        guard let expression = finder.firstExpression(in: line) else { return nil }
+        var rest = line
+        rest.removeSubrange(expression.range)
+        let leftover = rest.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        return leftover.isEmpty ? expression.text : nil
+    }
+
+    static func isWeightOnly(_ cell: String) -> Bool {
+        weight(in: cell) != nil
+            && cell.replacingOccurrences(of: #"[\d.%\s]|pts|points"#, with: "", options: [.regularExpression, .caseInsensitive]).isEmpty
+    }
+
+    /// Splits a table cell into items: "Discussion Post 1; Worksheet 1: Designing a study".
+    static func pieces(of cell: String) -> [String] {
+        sentences(of: cell).flatMap { $0.components(separatedBy: ";") }
+    }
+
     /// Splits a line at sentence breaks ("Panel data. Problem Set 3 due Oct 23").
     static func sentences(of line: String) -> [String] {
         line.replacingOccurrences(of: #"(?<=[a-z0-9)])\.\s+(?=[A-Z])"#, with: "\u{1E}", options: .regularExpression)
@@ -192,8 +258,11 @@ nonisolated struct RuleBasedSyllabusParser {
             )
         }
         working = working
+            .replacingOccurrences(of: #"(\s*,)+"#, with: ",", options: .regularExpression)
             .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: CharacterSet(charactersIn: " :-–—,.;()[]|•*·"))
+        // Trimming can take a closing parenthesis the title still needs: "Exam 2 (Chapters 7–11)".
+        if working.filter({ $0 == "(" }).count > working.filter({ $0 == ")" }).count { working += ")" }
         guard let first = working.first else { return "" }
         return first.uppercased() + working.dropFirst()
     }
@@ -232,18 +301,22 @@ nonisolated struct RuleBasedSyllabusParser {
 
     /// Checked in order: the first match wins ("Final Project" is a project, "Final Exam" an exam).
     private static let kindPatterns: [(AssignmentKind, NSRegularExpression)] = [
-        (.quiz, regex(#"\bquiz(zes)?\b"#)),
-        (.exam, regex(#"\b(exam|midterm|mid-term|test)s?\b"#)),
-        (.project, regex(#"\b(project|presentation|proposal|poster|capstone)s?\b"#)),
-        (.assignment, regex(#"\b(assignment|homework|hw\s*#?\d*|problem sets?|p-?set|ps\s*#?\d+|essay|paper|lab report|lab \d+|report|memo|case (write-?up|study|analysis)|response|reflection|write-?up|submission|draft|due)\b"#)),
-        (.reading, regex(#"\b(read|reading|readings|chapters?|ch\.\s*\d+)\b"#)),
+        (.quiz, regex(#"\b(quiz(zes)?|reading checks?|knowledge checks?|concept checks?)\b"#)),
+        (.exam, regex(#"\b(exams?|midterms?|mid-terms?|prelims?)\b|\btests?\s*#?\d+\b|\b(unit|chapter|final|in-class|practice) tests?\b"#)),
+        (.project, regex(#"\b(project|presentation|proposal|poster|capstone|demo)s?\b"#)),
+        (.assignment, regex(#"\b(assignments?|homework|hw\s*#?\d*|problem sets?|p-?sets?|ps\s*#?\d+|problems? \d+|essays?|papers?|lab reports?|labs?\s*#?\d+|reports?|memos?|case (write-?up|study|analysis|brief)|responses?|reflections?|write-?ups?|submissions?|drafts?|discussion (posts?|boards?|forums?|questions?)|forum posts?|blog posts?|worksheets?|exercises?|journals?|journal entr(y|ies)|milestones?|deliverables?|checkpoints?|bibliograph(y|ies)|outlines?|abstracts?|critiques?|portfolios?|summar(y|ies)|extra credit|acknowledge?ments?|(book|article|literature|peer) reviews?|annotations?|due)\b"#)),
+        // Only an actual reading, not a topic that cites a chapter ("Memory (Ch. 7)").
+        (.reading, regex(#"\bread\s+(ch(apters?)?\b|pp?\.|pages?|articles?|sections?|§)|^\W*(?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*\.?\s*[:\-–]\s*)?(read|readings?)\b(?!\s*(check|quiz))|\breadings? due\b"#)),
         (.exam, regex(#"\bfinal\b"#)),
     ]
 
     private static let weekHeaderPattern = regex(#"^\s*(?:week|wk\.?)\s*(\d{1,2})\b\s*[:.\-–—]?\s*"#)
     private static let dueCue = regex(#"\b(due|submit|turn in|hand in)\b"#)
     /// Policy and logistics lines that mention keywords but aren't graded items.
-    private static let ignoredLine = regex(#"\b(no class|holiday|break|office hours|late (work|policy|submissions?)|policy|accommodations?|academic integrity|drop deadline|withdraw)\b|^\s*(all|each|every|any|please)\b"#)
+    private static let ignoredLine = regex(#"\b(no class|holiday|break|office hours|late (work|policy|submissions?)|policy|accommodations?|academic integrity|drop deadline|withdraw|review (session|day|class)|(exam|midterm|final|test) (review|prep))\b|^\s*(all|each|every|any|please)\b"#)
+    /// Table column headings ("Assignments Due", "Topic & Readings").
+    private static let columnHeader = regex(#"^\W*(wk|week|date|dates|day|class|session|topics?|topic\s*(&|and)\s*readings?|readings?|assignments?(\s+due)?|due|deliverables?|work due|what'?s due|notes|lecture|assessments?|schedule|weight|points)\W*$"#)
+    private static let bulletPrefix = regex(#"^\s*[-•*·◦▪]\s"#)
     private static let percentPattern = regex(#"(\d{1,3}(?:\.\d+)?)\s*%"#)
     private static let pointsPattern = regex(#"(\d{1,4})\s*(?:pts|points)\b"#)
     private static let timePattern = regex(#"\b\d{1,2}(?::\d{2})?\s*[ap]\.?\s?m\b\.?|\b(?:[01]?\d|2[0-3]):[0-5]\d\b"#)
@@ -253,6 +326,7 @@ nonisolated struct RuleBasedSyllabusParser {
         regex(#"\(?\s*\d{1,3}(?:\.\d+)?\s*%(?:\s*of (?:the )?(?:final )?grade)?\s*\)?"#),
         regex(#"\(?\s*\d{1,4}\s*(?:pts|points)\s*\)?"#),
         regex(#"\s*[—–-]?\s*\bdate\s*$"#),
+        regex(#",?\s*\b(room|rm\.?|hall|bldg\.?|building)\s+\w+.*$"#),
         regex(#"\b(is |are )?(due|by|at|on)\b(?=\W*$)"#),
         regex(#"^\s*(?:[-•*·]|\d{1,2}[.)])\s+"#),
         regex(#"^\s*(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*\.?\s*[:,\-–]\s*"#),

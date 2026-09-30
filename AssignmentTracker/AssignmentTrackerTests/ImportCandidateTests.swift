@@ -16,10 +16,10 @@ struct ImportCandidateTests {
         #expect(candidate.reviewReason == nil)
     }
 
-    @Test func pastItemsStartUnchecked() {
+    @Test func pastItemsAreIncludedAndMarkedPast() {
         let candidate = build([DetectedItem(title: "Essay 1", kind: .assignment, dateText: "Sep 14")])[0]
-        #expect(!candidate.isIncluded)
-        #expect(candidate.dueDate != nil)
+        #expect(candidate.isIncluded)
+        #expect(candidate.isPast(relativeTo: Fixtures.today, calendar: Fixtures.calendar))
     }
 
     @Test func undatedItemsStartUncheckedWithReason() {

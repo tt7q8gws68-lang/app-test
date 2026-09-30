@@ -165,7 +165,7 @@ nonisolated struct SyllabusTextExtractor {
             guard let page = document.page(at: index) else { continue }
             let text = page.string ?? ""
             if text.trimmingCharacters(in: .whitespacesAndNewlines).count >= Self.minimumPageText {
-                pages.append(text)
+                pages.append(Self.layoutText(of: page) ?? text)
             } else if let image = Self.render(page) {
                 pages.append(try await recognizeText(in: image))
                 recognized += 1
@@ -175,6 +175,53 @@ nonisolated struct SyllabusTextExtractor {
             text: pages.joined(separator: "\n\n"), sourceName: name, fingerprint: "",
             pageCount: document.pageCount, recognizedPageCount: recognized
         )
+    }
+
+    /// The page's text in visual reading order, with table columns kept apart. `page.string`
+    /// scrambles tables with wrapped cells, so the page is rebuilt from PDFKit's positioned line
+    /// runs. A run can still span several columns, so each word gets its own box and a
+    /// column-sized gap splits the run.
+    static func layoutText(of page: PDFPage) -> String? {
+        guard let lines = page.selection(for: page.bounds(for: .mediaBox))?.selectionsByLine(), !lines.isEmpty
+        else { return nil }
+        let pageTop = page.bounds(for: .mediaBox).maxY
+        let pageText = (page.string ?? "") as NSString
+        func flipped(_ rect: CGRect) -> CGRect {
+            CGRect(x: rect.minX, y: pageTop - rect.maxY, width: rect.width, height: rect.height)
+        }
+
+        var words: [TextFragment] = []
+        for line in lines {
+            guard let text = line.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+            let lineRect = flipped(line.bounds(for: page))
+            let range = line.range(at: 0, on: page)
+            // Word boxes need indexes into the page's text; fall back to the whole run otherwise.
+            guard range.location != NSNotFound, range.upperBound <= pageText.length else {
+                words.append(TextFragment(text: text, rect: lineRect))
+                continue
+            }
+            let lineText = pageText.substring(with: range) as NSString
+            var cursor = 0
+            while cursor < lineText.length {
+                let rest = NSRange(location: cursor, length: lineText.length - cursor)
+                let wordRange = lineText.rangeOfCharacter(from: .whitespacesAndNewlines.inverted, options: [], range: rest)
+                guard wordRange.location != NSNotFound else { break }
+                let end = lineText.rangeOfCharacter(from: .whitespacesAndNewlines, options: [], range: NSRange(location: wordRange.location, length: lineText.length - wordRange.location))
+                let length = (end.location == NSNotFound ? lineText.length : end.location) - wordRange.location
+                let word = lineText.substring(with: NSRange(location: wordRange.location, length: length))
+                let box = page.selection(for: NSRange(location: range.location + wordRange.location, length: length))?.bounds(for: page)
+                if let box, box.width > 0 {
+                    // Keep the line's height so words on one line share a baseline band.
+                    let rect = flipped(box)
+                    words.append(TextFragment(text: word, rect: CGRect(x: rect.minX, y: lineRect.minY, width: rect.width, height: lineRect.height)))
+                } else {
+                    words.append(TextFragment(text: word, rect: lineRect))
+                }
+                cursor = wordRange.location + length
+            }
+        }
+        guard !words.isEmpty else { return nil }
+        return TextLayout.reconstruct(TextLayout.fragments(fromWords: words))
     }
 
     /// Renders a PDF page at 2× on white, for OCR.
@@ -206,24 +253,19 @@ nonisolated struct SyllabusTextExtractor {
         request.usesLanguageCorrection = true
         let observations = try await request.perform(on: image)
 
-        struct Line { var midY: Double; var height: Double; var x: Double; var text: String }
-        let lines: [Line] = observations.compactMap { observation in
+        // Vision boxes are normalized with a bottom-left origin; lay them out in pixels, top down.
+        let width = CGFloat(image.width), height = CGFloat(image.height)
+        let fragments: [TextFragment] = observations.compactMap { observation in
             guard let text = observation.topCandidates(1).first?.string else { return nil }
             let box = observation.boundingBox
-            return Line(midY: box.origin.y + box.height / 2, height: box.height, x: box.origin.x, text: text)
+            return TextFragment(text: text, rect: CGRect(
+                x: box.origin.x * width,
+                y: (1 - box.origin.y - box.height) * height,
+                width: box.width * width,
+                height: box.height * height
+            ))
         }
-        // Vision's origin is bottom-left: read top to bottom, grouping lines on the same row.
-        var rows: [[Line]] = []
-        for line in lines.sorted(by: { $0.midY > $1.midY }) {
-            if let last = rows.last?.first, abs(last.midY - line.midY) < max(last.height, line.height) * 0.5 {
-                rows[rows.count - 1].append(line)
-            } else {
-                rows.append([line])
-            }
-        }
-        return rows
-            .map { $0.sorted { $0.x < $1.x }.map(\.text).joined(separator: " | ") }
-            .joined(separator: "\n")
+        return TextLayout.reconstruct(fragments)
     }
 
     // MARK: - Helpers

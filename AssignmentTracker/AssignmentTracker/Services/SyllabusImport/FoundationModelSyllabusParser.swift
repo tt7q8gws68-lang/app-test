@@ -25,7 +25,7 @@ nonisolated struct FoundationModelSyllabusParser {
 
     /// Characters per request. The on-device context window is about 4,096 tokens and has to
     /// hold the instructions, the schema and the answer too.
-    static let chunkSize = 3_500
+    static let chunkSize = 2_200
 
     static var availability: Result<Void, Unavailable> {
         switch SystemLanguageModel.default.availability {
@@ -41,32 +41,76 @@ nonisolated struct FoundationModelSyllabusParser {
         }
     }
 
+    struct ChunkFailure: Error {}
+
+    /// Reads the syllabus in chunks. A chunk that fails (a guardrail, or a response too long
+    /// for the context window) is split and retried, and if it still fails it's skipped, so one
+    /// bad passage can't discard what the other chunks found. Throws only if every chunk failed.
+    /// `progress` gets (chunks done, total chunks).
     @concurrent
-    func parse(_ text: String) async throws -> (items: [DetectedItem], termStartText: String?) {
+    func parse(
+        _ text: String, progress: @Sendable (Int, Int) async -> Void = { _, _ in }
+    ) async throws -> (items: [DetectedItem], termStartText: String?) {
         var items: [DetectedItem] = []
         var termStartText: String?
+        let chunks = Self.chunks(of: text)
+        var failures = 0
 
-        for chunk in Self.chunks(of: text) {
-            // A fresh session per chunk keeps each request inside the context window.
-            let session = LanguageModelSession(instructions: Self.instructions)
+        for (index, chunk) in chunks.enumerated() {
+            await progress(index, chunks.count)
+            do {
+                for generated in try await Self.generate(chunk) {
+                    if termStartText == nil, !generated.firstDayOfClasses.isEmpty {
+                        termStartText = generated.firstDayOfClasses
+                    }
+                    items += generated.items.compactMap { Self.detectedItem(from: $0, source: chunk) }
+                }
+            } catch {
+                failures += 1
+            }
+        }
+        await progress(chunks.count, chunks.count)
+        if failures == chunks.count { throw ChunkFailure() }
+        return (items, termStartText)
+    }
+
+    /// One request, split in half and retried when the passage is too long for the model.
+    private static func generate(_ chunk: String, depth: Int = 0) async throws -> [GeneratedSyllabus] {
+        // A fresh session per request keeps each one inside the context window.
+        let session = LanguageModelSession(instructions: instructions)
+        do {
             let response = try await session.respond(
                 to: "Syllabus text:\n\n\(chunk)",
                 generating: GeneratedSyllabus.self,
                 options: GenerationOptions(samplingMode: .greedy)
             )
-            let generated = response.content
-            if termStartText == nil, !generated.firstDayOfClasses.isEmpty {
-                termStartText = generated.firstDayOfClasses
+            return [response.content]
+        } catch LanguageModelSession.GenerationError.exceededContextWindowSize where depth < 2 {
+            let halves = halve(chunk)
+            guard halves.count == 2 else { throw ChunkFailure() }
+            var results: [GeneratedSyllabus] = []
+            for half in halves {
+                results += (try? await generate(half, depth: depth + 1)) ?? []
             }
-            items += generated.items.compactMap { Self.detectedItem(from: $0, source: chunk) }
+            if results.isEmpty { throw ChunkFailure() }
+            return results
         }
-        return (items, termStartText)
+    }
+
+    private static func halve(_ chunk: String) -> [String] {
+        let lines = chunk.components(separatedBy: .newlines)
+        guard lines.count >= 2 else { return [chunk] }
+        let middle = lines.count / 2
+        return [lines[..<middle].joined(separator: "\n"), lines[middle...].joined(separator: "\n")]
     }
 
     private static let instructions = """
-        You extract graded work from a college course syllabus. List every assignment, \
-        problem set, essay, paper, lab, quiz, exam, project, presentation and required reading \
-        that has a due date or scheduled date. Skip lectures, holidays, office hours and policies. \
+        You extract graded work from a college course syllabus. List EVERY assignment, homework, \
+        problem set, worksheet, discussion post, journal, essay, paper, lab, quiz, exam, project, \
+        presentation, milestone and required reading that has a due date or scheduled date. \
+        Schedule tables use " | " between columns: one row can hold several items, so list each \
+        one separately with that row's date. Do not stop early or summarize; include every item. \
+        Skip lecture topics, holidays, office hours and policies. \
         Copy titles and dates exactly as written. Never calculate or guess dates.
         """
 

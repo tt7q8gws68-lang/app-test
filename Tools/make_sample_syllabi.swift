@@ -180,4 +180,43 @@ let photo = NSBitmapImageRep(cgImage: scan)
 try! photo.representation(using: .jpeg, properties: [.compressionFactor: 0.8])!
     .write(to: outputDirectory.appendingPathComponent("MACRO210_Macroeconomics_Photo.jpg"))
 
+// MARK: - PSYC 101 (text PDF, wrapped multi-column table + date headings)
+// 24 graded items. The table's long cells wrap onto several lines, and names like
+// "Discussion Post" and "Worksheet" aren't the usual "assignment" keywords.
+
+let psycWidths: [CGFloat] = [34, 64, 200, 206]
+let psyc: [Row] = [
+    .title("PSYC 101: Introduction to Psychology"),
+    .subtitle("Fall 2026 · Tue/Thu 2:00–3:15 PM · Dr. Maya Patel"),
+    .text("The semester starts on Monday, August 31, 2026. Weekly discussion posts are due on Canvas by 11:59 PM."),
+    .heading("Course Calendar"),
+    .columns(["Wk", "Date", "Topic & Readings", "Assignments Due"], widths: psycWidths, bold: true),
+    .columns(["1", "Tue 9/1", "Introduction; the science of psychology (Ch. 1)", "Syllabus acknowledgment"], widths: psycWidths),
+    .columns(["2", "Tue 9/8", "Research methods and ethics in human subjects research (Ch. 2)", "Discussion Post 1; Worksheet 1: Designing a study"], widths: psycWidths),
+    .columns(["3", "Thu 9/17", "Biological bases of behavior (Ch. 3)", "Reading Check 1"], widths: psycWidths),
+    .columns(["4", "Tue 9/22", "Sensation and perception (Ch. 4)", "Discussion Post 2"], widths: psycWidths),
+    .columns(["5", "Thu 10/1", "States of consciousness (Ch. 5)", "Worksheet 2: Sleep diary analysis"], widths: psycWidths),
+    .columns(["6", "Tue 10/6", "Learning: classical and operant conditioning (Ch. 6)", "Discussion Post 3"], widths: psycWidths),
+    .columns(["7", "Thu 10/15", "Exam 1 (Chapters 1–6), in class", ""], widths: psycWidths),
+    .columns(["8", "Tue 10/20", "Memory (Ch. 7)", "Journal Entry 1: Memory experiment reflection"], widths: psycWidths),
+    .columns(["9", "Thu 10/29", "Cognition, language and intelligence (Ch. 8)", "Reading Check 2; Research Paper Milestone 1: Topic"], widths: psycWidths),
+    .columns(["10", "Tue 11/3", "Development across the lifespan (Ch. 9)", "Discussion Post 4"], widths: psycWidths),
+    .columns(["11", "Thu 11/12", "Motivation and emotion (Ch. 10)", "Worksheet 3: Emotion regulation strategies"], widths: psycWidths),
+    .columns(["12", "Tue 11/17", "Personality (Ch. 11)", "Exam 2 (Chapters 7–11)"], widths: psycWidths),
+    .columns(["13", "Tue 11/24", "Social psychology (Ch. 12)", "Journal Entry 2"], widths: psycWidths),
+    .columns(["14", "Thu 12/3", "Psychological disorders and therapy (Ch. 13–14)", "Research Paper Milestone 2: Annotated bibliography"], widths: psycWidths),
+    .gap,
+    .heading("Other Key Dates"),
+    .text("Friday, October 9"),
+    .text("  •  Lab participation form (SONA credits, part 1)"),
+    .text("Monday, November 30"),
+    .text("  •  Poster draft for peer review"),
+    .text("  •  Extra credit article summary"),
+    .text("Wednesday, December 9"),
+    .text("  •  Final research paper, 11:59 PM"),
+    .text("Tuesday, December 15"),
+    .text("  •  Cumulative final exam, 10:30 AM, Room 120"),
+]
+makePDF(psyc, to: outputDirectory.appendingPathComponent("PSYC101_Psychology_Syllabus.pdf"))
+
 print("Wrote samples to \(outputDirectory.path)")

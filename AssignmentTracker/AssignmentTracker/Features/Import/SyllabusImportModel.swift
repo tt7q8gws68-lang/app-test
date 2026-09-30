@@ -50,6 +50,22 @@ final class SyllabusImportModel {
         candidates.filter { $0.isIncluded && $0.dueDate != nil }.count
     }
 
+    var pastIncludedCount: Int {
+        candidates.filter { $0.isIncluded && $0.isPast(relativeTo: referenceDate, calendar: calendar) }.count
+    }
+
+    var undatedCount: Int {
+        candidates.filter { $0.dueDate == nil }.count
+    }
+
+    /// Checks or unchecks every past (non-duplicate) item at once.
+    func setPastIncluded(_ included: Bool) {
+        for index in candidates.indices
+        where candidates[index].isPast(relativeTo: referenceDate, calendar: calendar) && candidates[index].duplicateOf == nil {
+            candidates[index].isIncluded = included
+        }
+    }
+
     /// Whether any item's date depends on the semester start.
     var usesRelativeWeeks: Bool {
         candidates.contains { $0.dateText?.range(of: #"\bw(ee)?ks?\b"#, options: [.regularExpression, .caseInsensitive]) != nil }
@@ -84,12 +100,15 @@ final class SyllabusImportModel {
         phase = .working("Reading \(name)…")
         do {
             let extracted = try await extract()
-            phase = .working(
-                FoundationModelSyllabusParser.availability.isAvailable
-                    ? "Finding assignments with Apple Intelligence…"
-                    : "Finding assignments…"
-            )
-            let analysis = await SyllabusAnalyzer(calendar: calendar, referenceDate: referenceDate).analyze(extracted.text)
+            let usesModel = FoundationModelSyllabusParser.availability.isAvailable
+            phase = .working(usesModel ? "Finding assignments with Apple Intelligence…" : "Finding assignments…")
+            let analysis = await SyllabusAnalyzer(calendar: calendar, referenceDate: referenceDate)
+                .analyze(extracted.text) { [weak self] done, total in
+                    guard total > 1 else { return }
+                    await MainActor.run {
+                        self?.phase = .working("Finding assignments with Apple Intelligence…\nPart \(min(done + 1, total)) of \(total)")
+                    }
+                }
             apply(analysis, from: extracted)
             phase = .reviewing
         } catch let importError as SyllabusImportError {
@@ -180,6 +199,9 @@ final class SyllabusImportModel {
             )
             context.insert(assignment)
             assignment.course = course
+            if candidate.isPast(relativeTo: referenceDate, calendar: calendar) {
+                assignment.setCompleted(true)
+            }
             created.append(assignment)
         }
         if !fingerprint.isEmpty, !course.importedSyllabusFingerprints.contains(fingerprint) {

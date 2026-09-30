@@ -42,6 +42,12 @@ nonisolated struct ImportCandidate: Identifiable, Equatable, Sendable {
         }
     }
 
+    /// Due before the import day: added as already done.
+    func isPast(relativeTo now: Date = .now, calendar: Calendar = .current) -> Bool {
+        guard let dueDate else { return false }
+        return dueDate < calendar.startOfDay(for: now)
+    }
+
     var suggestedPriority: Priority {
         let percent = weight.flatMap { Double($0.replacingOccurrences(of: "%", with: "")) }
         if kind == .exam || (percent ?? 0) >= 20 { return .high }
@@ -58,7 +64,8 @@ nonisolated struct ExistingAssignment: Sendable {
 
 nonisolated enum ImportCandidateBuilder {
     /// Resolves each item's date and decides whether it's included by default: items without
-    /// a date, already past, or already in the class start unchecked.
+    /// a date or already in the class start unchecked. Past items are included and saved as done,
+    /// so importing mid-semester still gives the class a complete record.
     static func candidates(
         from items: [DetectedItem], resolver: SyllabusDateResolver, existing: [ExistingAssignment]
     ) -> [ImportCandidate] {
@@ -95,8 +102,7 @@ nonisolated enum ImportCandidateBuilder {
     }
 
     static func defaultInclusion(for candidate: ImportCandidate, resolver: SyllabusDateResolver) -> Bool {
-        guard let due = candidate.dueDate, candidate.duplicateOf == nil else { return false }
-        return due >= resolver.calendar.startOfDay(for: resolver.referenceDate)
+        candidate.dueDate != nil && candidate.duplicateOf == nil
     }
 
     /// Same title (ignoring case, punctuation and filler words) and same day, or same title
