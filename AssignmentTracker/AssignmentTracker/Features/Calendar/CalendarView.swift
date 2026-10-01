@@ -76,13 +76,6 @@ struct MonthGridCard: View {
 
     private let calendar = Calendar.current
 
-    private var dueByDay: [Date: [Assignment]] {
-        Dictionary(grouping: assignments) { calendar.startOfDay(for: $0.dueDate) }
-    }
-
-    private var plannedDays: Set<Date> {
-        Set(assignments.filter { !$0.isCompleted }.compactMap(\.plannedDate).map { calendar.startOfDay(for: $0) })
-    }
 
     /// Whole weeks covering the month, starting on the locale's first weekday.
     private var days: [Date] {
@@ -101,6 +94,10 @@ struct MonthGridCard: View {
     }
 
     var body: some View {
+        // Built once per render, not once per day cell.
+        let dueByDay = Dictionary(grouping: assignments) { calendar.startOfDay(for: $0.dueDate) }
+        let plannedDays = Set(assignments.filter { !$0.isCompleted }.compactMap(\.plannedDate).map { calendar.startOfDay(for: $0) })
+        let selected = calendar.startOfDay(for: selectedDay)
         VStack(spacing: 12) {
             HStack {
                 Text(month.formatted(.dateTime.month(.wide).year()))
@@ -127,7 +124,7 @@ struct MonthGridCard: View {
                     DayCell(
                         day: day,
                         isInMonth: calendar.isDate(day, equalTo: month, toGranularity: .month),
-                        isSelected: calendar.isDate(day, inSameDayAs: selectedDay),
+                        isSelected: day == selected,
                         due: dueByDay[day] ?? [],
                         hasPlanned: plannedDays.contains(day)
                     )
@@ -227,15 +224,9 @@ private struct DayAgenda: View {
 
     private let calendar = Calendar.current
 
-    private var due: [Assignment] {
-        assignments.filter { calendar.isDate($0.dueDate, inSameDayAs: day) }
-    }
-
-    private var planned: [Assignment] {
-        assignments.filter {
-            !$0.isCompleted && $0.plannedDate.map { calendar.isDate($0, inSameDayAs: day) } == true
-                && !calendar.isDate($0.dueDate, inSameDayAs: day)
-        }
+    private var range: Range<Date> {
+        let start = calendar.startOfDay(for: day)
+        return start..<calendar.date(byAdding: .day, value: 1, to: start)!
     }
 
     private var title: String {
@@ -243,6 +234,11 @@ private struct DayAgenda: View {
     }
 
     var body: some View {
+        let range = range
+        let due = assignments.filter { range.contains($0.dueDate) }
+        let planned = assignments.filter {
+            !$0.isCompleted && $0.plannedDate.map(range.contains) == true && !range.contains($0.dueDate)
+        }
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 SectionHeader(title)
@@ -266,8 +262,8 @@ private struct DayAgenda: View {
                     .padding(.horizontal, 16)
                     .glassCard(cornerRadius: 26)
             } else {
-                let planned = Set(planned.map(\.id))
-                AssignmentGroup(assignments: due + self.planned) { planned.contains($0.id) ? "Planned" : nil }
+                let plannedIDs = Set(planned.map(\.id))
+                AssignmentGroup(assignments: due + planned) { plannedIDs.contains($0.id) ? "Planned" : nil }
             }
         }
     }

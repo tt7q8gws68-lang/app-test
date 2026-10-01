@@ -9,9 +9,9 @@ struct StepsCard: View {
     @Environment(\.modelContext) private var modelContext
     @State private var newStepTitle = ""
 
-    private var steps: [Step] { assignment.sortedSteps }
-
     var body: some View {
+        // Sorted once per render rather than on every access.
+        let steps = assignment.sortedSteps
         let done = steps.filter(\.isDone).count
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
@@ -85,7 +85,7 @@ struct StepsCard: View {
     private func addStep() {
         let title = newStepTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return }
-        let nextIndex = (steps.map(\.sortIndex).max() ?? -1) + 1
+        let nextIndex = (assignment.steps.map(\.sortIndex).max() ?? -1) + 1
         withAnimation(.snappy) {
             assignment.steps.append(Step(title: title, sortIndex: nextIndex))
         }

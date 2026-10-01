@@ -33,6 +33,9 @@ struct DuskBackground: View {
                 }
                 .blur(radius: colorScheme == .dark ? 80 : 70)
             }
+            // Rasterize the blurred glows once rather than re-blurring them on every composite;
+            // the glass above samples this layer constantly.
+            .drawingGroup()
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
