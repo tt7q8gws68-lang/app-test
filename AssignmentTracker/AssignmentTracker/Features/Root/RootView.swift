@@ -13,6 +13,7 @@ struct RootView: View {
     @State private var tabBarVisibility = TabBarVisibility()
     /// The day shown in Calendar; the Assignments week strip sets it.
     @State private var calendarDay = Calendar.current.startOfDay(for: .now)
+    @State private var calendarFocus = 0
     @State private var celebration: Celebration?
     /// Worked out when completion history changes (or the time does), not on every render.
     @State private var stats = HabitStats()
@@ -40,12 +41,13 @@ struct RootView: View {
             Tab(value: AppTab.assignments) {
                 AssignmentsView { day in
                     calendarDay = day
+                    calendarFocus += 1
                     withAnimation(.snappy) { tab = .calendar }
                 }
                 .tabContent(barVisible: tabBarVisibility.isVisible)
             }
             Tab(value: AppTab.calendar) {
-                CalendarView(selectedDay: $calendarDay)
+                CalendarView(selectedDay: $calendarDay, focusRequest: calendarFocus)
                     .tabContent(barVisible: tabBarVisibility.isVisible)
             }
             Tab(value: AppTab.courses) {

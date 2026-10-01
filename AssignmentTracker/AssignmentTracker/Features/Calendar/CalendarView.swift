@@ -12,6 +12,9 @@ struct CalendarView: View {
 
     /// Owned by `RootView`, so the Assignments week strip can open a day here.
     @Binding var selectedDay: Date
+    /// Bumped by `RootView` each time a day is opened from elsewhere, so its month comes into view
+    /// even when that day was already selected (and `selectedDay` doesn't change).
+    var focusRequest = 0
 
     @Query(sort: \Assignment.dueDate) private var assignments: [Assignment]
     @State private var mode: Mode = .month
@@ -27,8 +30,8 @@ struct CalendarView: View {
                     ) {
                         GlassCapsuleButton(title: "Today") {
                             withAnimation(.snappy) {
-                                mode = .month
                                 selectedDay = Calendar.current.startOfDay(for: .now)
+                                show(selectedDay)
                             }
                         }
                     }
@@ -55,15 +58,20 @@ struct CalendarView: View {
             .navigationDestination(for: Assignment.self) { assignment in
                 AssignmentDetailView(assignment: assignment)
             }
-            .onChange(of: selectedDay, initial: true) { _, day in
-                // A day picked elsewhere (the Assignments strip) brings its month into view.
-                let calendar = Calendar.current
-                if !calendar.isDate(day, equalTo: month, toGranularity: .month) {
-                    month = calendar.dateInterval(of: .month, for: day)!.start
-                }
-                mode = .month
-            }
+            .onChange(of: selectedDay, initial: true) { _, day in show(day) }
+            .onChange(of: focusRequest) { show(selectedDay) }
         }
+    }
+}
+
+extension CalendarView {
+    /// Switches to the month view with `day`'s month on screen.
+    private func show(_ day: Date) {
+        let calendar = Calendar.current
+        if !calendar.isDate(day, equalTo: month, toGranularity: .month) {
+            month = calendar.dateInterval(of: .month, for: day)!.start
+        }
+        mode = .month
     }
 }
 
