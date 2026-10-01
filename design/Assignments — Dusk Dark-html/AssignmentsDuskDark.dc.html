@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Assignments — Dusk (dark)</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',-apple-system,'Helvetica Neue',sans-serif;color:#F4F2FB;background:#0D0B1A}
+a{color:#A89BFF;text-decoration:none}a:hover{color:#C4BBFF}
+button{font-family:inherit;cursor:pointer;color:inherit}
+.glass{background:rgba(214,205,255,0.085);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.05),0 12px 32px rgba(0,0,0,0.45)}
+.noscroll{scrollbar-width:none}
+.noscroll::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0D0B1A; box-sizing: border-box">
+<div style="position: absolute; left: -90px; top: -70px; width: 320px; height: 320px; border-radius: 50%; background: #4B3BFF; filter: blur(80px); opacity: 0.42"></div>
+<div style="position: absolute; right: -110px; top: 250px; width: 300px; height: 300px; border-radius: 50%; background: #B03DE0; filter: blur(80px); opacity: 0.28"></div>
+<div style="position: absolute; left: -40px; top: 610px; width: 280px; height: 280px; border-radius: 50%; background: #FF4D8D; filter: blur(80px); opacity: 0.22"></div>
+
+<div class="noscroll" style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; overflow-y: auto; padding: 62px 20px 124px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 500; color: #ABA6C8">Thursday, October 1</div>
+<h1 style="margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -0.8px">Assignments</h1>
+</div>
+<div style="display: flex; gap: 10px; align-items: center">
+<button class="glass" aria-label="Search" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F4F2FB" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M19.5 19.5l-4-4"></path></svg></button>
+<button aria-label="New assignment" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; padding: 0; background: rgba(124,108,255,0.92); border: 1px solid rgba(255,255,255,0.28); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 8px 20px rgba(124,108,255,0.4)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"></path></svg></button>
+</div>
+</div>
+
+<div class="glass" style="border-radius: 28px; padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 16px">
+<div style="position: relative; width: 76px; height: 76px; flex-shrink: 0">
+<div style="position: absolute; left: 0; top: 0; width: 76px; height: 76px; border-radius: 50%; background: conic-gradient(#8C7DFF 0deg, #FF7FA6 {{ringDeg}}deg, rgba(255,255,255,0.12) {{ringDeg}}deg, rgba(255,255,255,0.12) 360deg); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px)); mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px))"></div>
+<div style="position: absolute; left: 0; top: 0; width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; letter-spacing: -0.3px">{{doneCount}}/{{total}}</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 13px; font-weight: 500; color: #ABA6C8">This week</div>
+<div style="font-size: 28px; font-weight: 700; letter-spacing: -0.5px">{{remaining}} to go</div>
+<div style="font-size: 14px; color: #ABA6C8">{{dueSub}}</div>
+</div>
+</div>
+<div style="height: 1px; background: rgba(255,255,255,0.10)"></div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0">
+<button aria-label="Monday, September 28" style="border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600; color: #ABA6C8">M</span><span style="width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #6F6A8C; font-weight: 500">28</span><span style="display: flex; gap: 3px; height: 5px"></span></button>
+<button aria-label="Tuesday, September 29" style="border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600; color: #ABA6C8">T</span><span style="width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #6F6A8C; font-weight: 500">29</span><span style="display: flex; gap: 3px; height: 5px"></span></button>
+<button aria-label="Wednesday, September 30" style="border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600; color: #ABA6C8">W</span><span style="width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #6F6A8C; font-weight: 500">30</span><span style="display: flex; gap: 3px; height: 5px"></span></button>
+<button aria-label="Thursday, October 1, today, 2 due" style="border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600; color: #ABA6C8">T</span><span style="width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; background: #8C7DFF; color: #0D0B1A; font-weight: 700">1</span><span style="display: flex; gap: 3px; height: 5px"><span style="width: 5px; height: 5px; border-radius: 3px; background: #8C7DFF"></span><span style="width: 5px; height: 5px; border-radius: 3px; background: #FF7FA6"></span></span></button>
+<button aria-label="Friday, October 2, 1 due" style="border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600; color: #ABA6C8">F</span><span style="width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #F4F2FB; font-weight: 500">2</span><span style="display: flex; gap: 3px; height: 5px"><span style="width: 5px; height: 5px; border-radius: 3px; background: #4FD0E0"></span></span></button>
+<button aria-label="Saturday, October 3, 1 due" style="border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600; color: #ABA6C8">S</span><span style="width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #F4F2FB; font-weight: 500">3</span><span style="display: flex; gap: 3px; height: 5px"><span style="width: 5px; height: 5px; border-radius: 3px; background: #C98BFF"></span></span></button>
+<button aria-label="Sunday, October 4, 1 due" style="border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600; color: #ABA6C8">S</span><span style="width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #F4F2FB; font-weight: 500">4</span><span style="display: flex; gap: 3px; height: 5px"><span style="width: 5px; height: 5px; border-radius: 3px; background: #8C7DFF"></span></span></button>
+
+</div>
+</div>
+
+<div class="glass" style="border-radius: 26px; padding: 4px; display: flex; gap: 4px">
+<sc-for list="{{segments}}" as="seg" hint-placeholder-count="3">
+<sc-if value="{{seg.active}}" hint-placeholder-val="{{false}}">
+<button onClick="{{seg.pick}}" aria-pressed="true" style="flex-grow: 1; flex-basis: 0; height: 44px; border-radius: 22px; border: none; background: rgba(255,255,255,0.18); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.3); font-size: 15px; font-weight: 600">{{seg.label}}</button>
+</sc-if>
+<sc-if value="{{seg.inactive}}" hint-placeholder-val="{{true}}">
+<button onClick="{{seg.pick}}" aria-pressed="false" style="flex-grow: 1; flex-basis: 0; height: 44px; border-radius: 22px; border: none; background: transparent; font-size: 15px; font-weight: 500; color: #C0BBDB">{{seg.label}}</button>
+</sc-if>
+</sc-for>
+</div>
+
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{false}}">
+<div class="glass" style="border-radius: 22px; padding: 28px 20px; text-align: center; font-size: 15px; color: #ABA6C8">Nothing here yet.</div>
+</sc-if>
+
+<sc-for list="{{groups}}" as="group" hint-placeholder-count="2">
+<sc-if value="{{group.hasItems}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px">
+<div style="font-size: 13px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #ABA6C8">{{group.title}}</div>
+<div style="font-size: 14px; color: #ABA6C8">{{group.meta}}</div>
+</div>
+<div class="glass" style="border-radius: 26px; padding: 6px; display: flex; flex-direction: column">
+<sc-for list="{{group.items}}" as="item" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px">
+<button onClick="{{item.toggle}}" aria-label="{{item.checkLabel}}" style="width: 44px; height: 44px; border: none; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<sc-if value="{{item.done}}" hint-placeholder-val="{{false}}">
+<div style="width: 24px; height: 24px; border-radius: 12px; background: {{item.color}}; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D0B1A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4 4 9-9"></path></svg></div>
+</sc-if>
+<sc-if value="{{item.open}}" hint-placeholder-val="{{true}}">
+<div style="width: 20px; height: 20px; border-radius: 12px; border: 2px solid {{item.color}}"></div>
+</sc-if>
+</button>
+<a href="#" style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 8px 0; color: #F4F2FB">
+<div style="font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; {{item.titleStyle}}">{{item.title}}</div>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #ABA6C8">
+<div style="width: 8px; height: 8px; border-radius: 4px; background: {{item.color}}"></div>
+<div>{{item.course}}</div>
+<div>·</div>
+<div>{{item.due}}</div>
+</div>
+</a>
+</div>
+<sc-if value="{{item.notLast}}" hint-placeholder-val="{{true}}">
+<div style="height: 1px; margin-left: 54px; margin-right: 12px; background: rgba(255,255,255,0.10)"></div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</sc-for>
+</div>
+
+<nav class="glass" aria-label="Main" style="position: absolute; left: 16px; right: 16px; bottom: 30px; height: 64px; border-radius: 32px; padding: 6px; box-sizing: border-box; display: flex; gap: 4px">
+<button aria-current="page" style="flex-grow: 1; flex-basis: 0; border: none; border-radius: 26px; background: rgba(255,255,255,0.16); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #A89BFF"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5"></rect><path d="M8.5 12.2l2.4 2.4 4.6-4.8"></path></svg><span style="font-size: 11px; font-weight: 600">Assignments</span></button>
+<button style="flex-grow: 1; flex-basis: 0; border: none; border-radius: 26px; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #C0BBDB"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="4"></rect><path d="M4 10.5h16M9 3.5v3M15 3.5v3"></path></svg><span style="font-size: 11px; font-weight: 500">Calendar</span></button>
+<button style="flex-grow: 1; flex-basis: 0; border: none; border-radius: 26px; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #C0BBDB"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 6A2 2 0 0 1 7.5 4H18.5v12.5H7.5a2 2 0 0 0-2 2z"></path><path d="M5.5 18.5a1.5 1.5 0 0 0 1.5 1.5h11.5"></path></svg><span style="font-size: 11px; font-weight: 500">Courses</span></button>
+<button style="flex-grow: 1; flex-basis: 0; border: none; border-radius: 26px; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #C0BBDB"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c.8 3 4.5 4.8 4.5 9a4.5 4.5 0 0 1-9 0c0-1.9.8-3.2 1.8-4.1.3 1.4.9 2.2 1.8 2.6 0-2.8.2-5.1.9-7.5z"></path></svg><span style="font-size: 11px; font-weight: 500">Streaks</span></button>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'all', done: { reading: true } };
+  }
+  renderVals() {
+    var self = this;
+    var base = [
+      { id: 'ps4', title: 'Problem Set 4: Bond Valuation', course: 'Corporate Finance', color: '#8C7DFF', due: '11:59 PM', group: 'today' },
+      { id: 'reading', title: 'Read Chapter 7', course: 'Econometrics', color: '#FF7FA6', due: '5:00 PM', group: 'today' },
+      { id: 'essay', title: 'Fed Policy Essay', course: 'Money & Banking', color: '#4FD0E0', due: 'Fri, 11:59 PM', group: 'week' },
+      { id: 'quiz', title: 'Quiz 3', course: 'Macroeconomics', color: '#C98BFF', due: 'Sat, 9:00 AM', group: 'week' },
+      { id: 'slides', title: 'Group Presentation Slides', course: 'Corporate Finance', color: '#8C7DFF', due: 'Sun, 8:00 PM', group: 'week' }
+    ];
+    var done = this.state.done;
+    var filter = this.state.filter;
+    var all = base.map(function (a) {
+      var isDone = !!done[a.id];
+      return Object.assign({}, a, {
+        done: isDone,
+        open: !isDone,
+        checkLabel: isDone ? 'Mark ' + a.title + ' as not done' : 'Mark ' + a.title + ' as done',
+        titleStyle: isDone ? 'color: #8A85A8; text-decoration: line-through' : 'color: #F4F2FB',
+        toggle: function () {
+          var next = Object.assign({}, self.state.done);
+          next[a.id] = !next[a.id];
+          self.setState({ done: next });
+        }
+      });
+    });
+    var visible = all.filter(function (a) {
+      if (filter === 'upcoming') return !a.done;
+      if (filter === 'done') return a.done;
+      return true;
+    });
+    function pack(list) {
+      return list.map(function (a, i) { return Object.assign({}, a, { notLast: i < list.length - 1 }); });
+    }
+    function meta(g) {
+      var left = all.filter(function (a) { return a.group === g && !a.done; }).length;
+      return left === 0 ? 'All done' : left + ' left';
+    }
+    var today = visible.filter(function (a) { return a.group === 'today'; });
+    var week = visible.filter(function (a) { return a.group === 'week'; });
+    var doneCount = all.filter(function (a) { return a.done; }).length;
+    var dueToday = all.filter(function (a) { return a.group === 'today' && !a.done; }).length;
+    var segs = [{ key: 'all', label: 'All' }, { key: 'upcoming', label: 'To do' }, { key: 'done', label: 'Done' }];
+    return {
+      total: all.length,
+      doneCount: doneCount,
+      remaining: all.length - doneCount,
+      ringDeg: Math.round((doneCount / all.length) * 360),
+      dueSub: dueToday === 0 ? 'Nothing due today' : dueToday + ' due today',
+      isEmpty: visible.length === 0,
+      segments: segs.map(function (s) {
+        return { label: s.label, active: s.key === filter, inactive: s.key !== filter, pick: function () { self.setState({ filter: s.key }); } };
+      }),
+      groups: [
+        { title: 'Today', meta: meta('today'), items: pack(today), hasItems: today.length > 0 },
+        { title: 'This week', meta: meta('week'), items: pack(week), hasItems: week.length > 0 }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
