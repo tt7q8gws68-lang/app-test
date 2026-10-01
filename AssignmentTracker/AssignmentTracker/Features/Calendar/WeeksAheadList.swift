@@ -33,7 +33,7 @@ struct WeeksAheadList: View {
             if !overdue.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     SectionHeader("Overdue")
-                    ForEach(overdue) { AssignmentRow(assignment: $0) }
+                    AssignmentGroup(assignments: overdue)
                 }
             }
             ForEach(Array(weeks.enumerated()), id: \.element.id) { index, week in
@@ -110,8 +110,10 @@ private struct DayLoadStrip: View {
                 let day = calendar.date(byAdding: .day, value: offset, to: start)!
                 let dueThatDay = items.filter { calendar.isDate($0.dueDate, inSameDayAs: day) }
                 VStack(spacing: 4) {
-                    Capsule()
+                    // A narrow bar, so a busy day reads as taller rather than as a wide blob.
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
                         .fill(dueThatDay.isEmpty ? AnyShapeStyle(Palette.track) : AnyShapeStyle(barColor(for: dueThatDay)))
+                        .frame(maxWidth: 18)
                         .frame(height: CGFloat(4 + min(dueThatDay.count, 4) * 7))
                     Text(day.formatted(.dateTime.weekday(.narrow)))
                         .font(.caption2.weight(calendar.isDateInToday(day) ? .bold : .regular))
