@@ -14,15 +14,25 @@ struct RootView: View {
     /// The day shown in Calendar; the Assignments week strip sets it.
     @State private var calendarDay = Calendar.current.startOfDay(for: .now)
     @State private var celebration: Celebration?
+    /// Worked out when completion history changes (or the time does), not on every render.
+    @State private var stats = HabitStats()
     @State private var lastStats: HabitStats?
     @State private var lastStatsDay = Calendar.current.startOfDay(for: .now)
+    /// The time the screens compare due dates against. It moves on at each due time and when the
+    /// app comes back, so an item turns overdue on time instead of on the next unrelated change.
+    @State private var now = Date.now
     /// Start of the current day. Changing it rebuilds the tabs, so "Today", "Overdue" and the
     /// streak are right after the app sits in the background overnight or stays open past midnight.
     @State private var currentDay = Calendar.current.startOfDay(for: .now)
     @Environment(\.scenePhase) private var scenePhase
 
-    private var stats: HabitStats {
-        HabitStats(records: assignments.map(\.completionRecord))
+    private var records: [CompletionRecord] {
+        assignments.map(\.completionRecord)
+    }
+
+    /// The soonest due time still ahead for open work: when something next turns overdue.
+    private var nextDueTime: Date? {
+        assignments.lazy.filter { !$0.isCompleted && $0.dueDate > now }.map(\.dueDate).min()
     }
 
     var body: some View {
@@ -75,6 +85,7 @@ struct RootView: View {
             }
         }
         .environment(tabBarVisibility)
+        .environment(\.currentTime, now)
         .foregroundStyle(Palette.text)
         .overlay(alignment: .top) {
             if let celebration {
@@ -85,24 +96,20 @@ struct RootView: View {
             }
         }
         .sensoryFeedback(.success, trigger: celebration) { _, new in new != nil }
-        .onChange(of: stats) { _, new in
-            // The first value is just the app opening, and a change of day isn't progress:
-            // only changes within the same day are celebrated.
-            let statsDay = lastStatsDay
-            defer {
-                lastStats = new
-                lastStatsDay = Calendar.current.startOfDay(for: .now)
-            }
-            guard Calendar.current.isDateInToday(statsDay),
-                  let old = lastStats, let found = new.celebration(since: old) else { return }
-            withAnimation(.spring(duration: 0.45, bounce: 0.3)) { celebration = found }
+        .onChange(of: records, initial: true) { _, records in
+            updateStats(from: records, celebrate: true)
         }
-        .onAppear { lastStats = stats }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { refreshDay() }
+            if phase == .active { refreshTime() }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
-            refreshDay()
+            refreshTime()
+        }
+        .task(id: nextDueTime) {
+            guard let nextDueTime else { return }
+            try? await Task.sleep(for: .seconds(max(nextDueTime.timeIntervalSinceNow, 0) + 1))
+            guard !Task.isCancelled else { return }
+            refreshTime()
         }
         .task(id: celebration) {
             guard celebration != nil else { return }
@@ -110,6 +117,11 @@ struct RootView: View {
             withAnimation(.snappy) { celebration = nil }
         }
     }
+}
+
+extension EnvironmentValues {
+    /// The time screens compare due dates against, kept by `RootView` (see `now` there).
+    @Entry var currentTime: Date = .now
 }
 
 private extension View {
@@ -123,13 +135,27 @@ private extension View {
 }
 
 extension RootView {
-    private func refreshDay() {
-        let today = Calendar.current.startOfDay(for: .now)
-        guard today != currentDay else { return }
-        currentDay = today
-        // A new day isn't an achievement: re-baseline so it can't trigger a celebration.
-        lastStats = stats
-        lastStatsDay = today
+    /// Moves `now` on, and rebuilds the tabs when the day has changed.
+    private func refreshTime() {
+        now = .now
+        let today = Calendar.current.startOfDay(for: now)
+        if today != currentDay { currentDay = today }
+        // Time passing isn't an achievement: update without celebrating.
+        updateStats(from: records, celebrate: false)
+    }
+
+    private func updateStats(from records: [CompletionRecord], celebrate: Bool) {
+        let new = HabitStats(records: records)
+        // The first value is just the app opening, and a change of day isn't progress:
+        // only changes within the same day are celebrated.
+        let old = lastStats
+        let statsDay = lastStatsDay
+        stats = new
+        lastStats = new
+        lastStatsDay = Calendar.current.startOfDay(for: .now)
+        guard celebrate, Calendar.current.isDateInToday(statsDay),
+              let old, let found = new.celebration(since: old) else { return }
+        withAnimation(.spring(duration: 0.45, bounce: 0.3)) { celebration = found }
     }
 }
 

@@ -9,9 +9,10 @@ struct AssignmentRow: View {
     var tag: String?
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.currentTime) private var now
 
     private var isOverdue: Bool {
-        !assignment.isCompleted && assignment.dueDate < .now
+        !assignment.isCompleted && assignment.dueDate < now
     }
 
     var body: some View {
@@ -44,7 +45,7 @@ struct AssignmentRow: View {
                                 .lineLimit(1)
                             Text("·")
                         }
-                        Text(assignment.dueDate.dueRowLabel())
+                        Text(assignment.dueDate.dueRowLabel(now: now))
                             .foregroundStyle(isOverdue ? Palette.danger : Palette.secondaryText)
                             .fixedSize()
                         if let planned = assignment.plannedDate, !assignment.isCompleted, tag == nil {

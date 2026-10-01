@@ -10,7 +10,7 @@ struct CoursesView: View {
     @State private var isImporting = false
     @State private var isAssigning = false
 
-    private var summaries: [(course: Course, summary: CourseSummary)] {
+    private func makeSummaries() -> [(course: Course, summary: CourseSummary)] {
         courses.map { course in
             (course, CourseSummary(
                 name: course.name,
@@ -19,21 +19,20 @@ struct CoursesView: View {
         }
     }
 
-    private var unassigned: [Assignment] {
-        assignments.filter { $0.course == nil }
-    }
-
-    private var subtitle: String {
+    private func subtitle(for summaries: [(course: Course, summary: CourseSummary)]) -> String {
         let toDo = summaries.reduce(0) { $0 + $1.summary.openCount }
         let courseWord = courses.count == 1 ? "course" : "courses"
         return "\(courses.count) \(courseWord) · \(toDo) to do"
     }
 
     var body: some View {
+        // Built once per render; the header and the list both use them.
+        let summaries = makeSummaries()
+        let unassigned = assignments.filter { $0.course == nil }
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    ScreenHeader(subtitle: subtitle, title: "Courses") {
+                    ScreenHeader(subtitle: subtitle(for: summaries), title: "Courses") {
                         GlassCircleButton(icon: .scan, label: "Import syllabus") {
                             isImporting = true
                         }
@@ -57,7 +56,7 @@ struct CoursesView: View {
                     }
 
                     if !unassigned.isEmpty {
-                        unassignedRow
+                        unassignedRow(count: unassigned.count)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -89,8 +88,7 @@ struct CoursesView: View {
         .glassCard(cornerRadius: 26)
     }
 
-    private var unassignedRow: some View {
-        let count = unassigned.count
+    private func unassignedRow(count: Int) -> some View {
         let text = count == 1 ? "1 assignment has no course" : "\(count) assignments have no course"
         return Button { isAssigning = true } label: {
             HStack(spacing: 12) {
@@ -119,6 +117,7 @@ struct CoursesView: View {
 private struct CourseRow: View {
     let course: Course
     let summary: CourseSummary
+    @Environment(\.currentTime) private var now
 
     var body: some View {
         HStack(spacing: 14) {
@@ -128,7 +127,7 @@ private struct CourseRow: View {
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Palette.text)
                     .lineLimit(1)
-                Text(summary.detail())
+                Text(summary.detail(now: now))
                     .font(.subheadline)
                     .foregroundStyle(Palette.secondaryText)
                     .lineLimit(1)

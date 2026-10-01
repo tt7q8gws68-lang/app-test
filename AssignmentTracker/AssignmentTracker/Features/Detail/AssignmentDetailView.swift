@@ -6,6 +6,7 @@ struct AssignmentDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.currentTime) private var now
     @State private var isEditing = false
     @State private var isConfirmingDelete = false
     @FocusState private var isAddingStep: Bool
@@ -129,7 +130,7 @@ struct AssignmentDetailView: View {
     }
 
     private var isOverdue: Bool {
-        !assignment.isCompleted && assignment.dueDate < .now
+        !assignment.isCompleted && assignment.dueDate < now
     }
 
     private var dueText: String {

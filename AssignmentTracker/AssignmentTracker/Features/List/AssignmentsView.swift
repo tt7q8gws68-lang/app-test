@@ -23,6 +23,7 @@ struct AssignmentsView: View {
     var onShowDay: (Date) -> Void = { _ in }
 
     @Query(sort: \Assignment.dueDate) private var assignments: [Assignment]
+    @Environment(\.currentTime) private var now
     @State private var filter: Filter = .all
     @State private var searchText = ""
     @State private var isSearching = false
@@ -30,9 +31,11 @@ struct AssignmentsView: View {
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
+        let sections = sections
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                // Lazy, so sections far down (Later, a semester of Earlier) build only when reached.
+                LazyVStack(alignment: .leading, spacing: 18) {
                     ScreenHeader(
                         subtitle: Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
                         title: "Assignments"
@@ -142,12 +145,14 @@ struct AssignmentsView: View {
     private var hero: WeekHeroSummary {
         WeekHeroSummary(items: assignments.map {
             WeekHeroSummary.Item(dueDate: $0.dueDate, isCompleted: $0.isCompleted, color: $0.course?.colorToken)
-        })
+        }, now: now)
     }
 
     private var sections: [Section] {
-        let now = Date.now
-        let byBucket = Dictionary(grouping: assignments) { DueBucket.of($0, now: now) }
+        let window = WeekWindow(now: now)
+        let byBucket = Dictionary(grouping: assignments) {
+            DueBucket.of(dueDate: $0.dueDate, isCompleted: $0.isCompleted, in: window)
+        }
         return DueBucket.allCases.compactMap { bucket in
             let all = byBucket[bucket] ?? []
             var items = all.filter { assignment in
