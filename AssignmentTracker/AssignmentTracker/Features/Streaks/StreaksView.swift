@@ -51,7 +51,13 @@ private struct StreakCard: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 16) {
                 TintTile(content: .icon(.streaks), color: Palette.streakOrange, size: 60, cornerRadius: 20)
-                    .symbolEffect(.bounce, value: stats.currentStreak)
+                    // A quick hop when the streak changes (symbolEffect only animates SF Symbols).
+                    .keyframeAnimator(initialValue: 1.0, trigger: stats.currentStreak) { tile, scale in
+                        tile.scaleEffect(scale)
+                    } keyframes: { _ in
+                        SpringKeyframe(1.18, duration: 0.15)
+                        SpringKeyframe(1.0, duration: 0.35, spring: .bouncy)
+                    }
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("\(stats.currentStreak)")
