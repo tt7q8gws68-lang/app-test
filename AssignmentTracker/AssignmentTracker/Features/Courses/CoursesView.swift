@@ -19,8 +19,9 @@ struct CoursesView: View {
         }
     }
 
-    private func subtitle(for summaries: [(course: Course, summary: CourseSummary)]) -> String {
-        let toDo = summaries.reduce(0) { $0 + $1.summary.openCount }
+    private func subtitle(for summaries: [(course: Course, summary: CourseSummary)], unassigned: [Assignment]) -> String {
+        // Open work in every course, plus open work with no course yet.
+        let toDo = summaries.reduce(0) { $0 + $1.summary.openCount } + unassigned.filter { !$0.isCompleted }.count
         let courseWord = courses.count == 1 ? "course" : "courses"
         return "\(courses.count) \(courseWord) · \(toDo) to do"
     }
@@ -32,7 +33,7 @@ struct CoursesView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    ScreenHeader(subtitle: subtitle(for: summaries), title: "Courses") {
+                    ScreenHeader(subtitle: subtitle(for: summaries, unassigned: unassigned), title: "Courses") {
                         GlassCircleButton(icon: .scan, label: "Import syllabus") {
                             isImporting = true
                         }
