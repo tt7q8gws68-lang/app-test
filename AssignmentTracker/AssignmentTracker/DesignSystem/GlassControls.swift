@@ -73,7 +73,6 @@ struct GlassSegmented<Value: Hashable>: View {
                             if isSelected {
                                 Capsule()
                                     .fill(Palette.selectedSegment)
-                                    .shadow(color: Palette.glassShadow, radius: 4, y: 2)
                                     .matchedGeometryEffect(id: "pill", in: pill)
                             }
                         }

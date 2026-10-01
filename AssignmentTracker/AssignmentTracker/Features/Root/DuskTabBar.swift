@@ -38,9 +38,7 @@ struct DuskTabBar: View {
         }
         .padding(6)
         .frame(height: 64)
-        .background(Palette.barBacking, in: Capsule())
-        .background(.ultraThinMaterial, in: Capsule())
-        .duskGlass(in: Capsule())
+        .glassEffect(.regular.interactive(), in: .capsule)
         .padding(.horizontal, 16)
     }
 }

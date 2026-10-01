@@ -51,6 +51,22 @@ struct RootView: View {
         .overlay(alignment: .bottom) {
             if tabBarVisibility.isVisible {
                 DuskTabBar(selection: $tab)
+                    // The system bar's soft scroll edge: content fades out under the bar, so
+                    // the clear glass shows the glows rather than text running into the labels.
+                    .background(alignment: .bottom) {
+                        LinearGradient(
+                            stops: [
+                                .init(color: Palette.background.opacity(0), location: 0),
+                                .init(color: Palette.background.opacity(0.75), location: 0.55),
+                                .init(color: Palette.background.opacity(0.9), location: 1),
+                            ],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                        .frame(height: 140)
+                        .padding(.bottom, -30)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                    }
                     // 30pt above the screen's bottom edge, which sits inside the bottom safe area.
                     .padding(.bottom, 30)
                     // Stays put (behind the keyboard) instead of riding up over the content.

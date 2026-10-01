@@ -30,16 +30,10 @@ enum Palette {
     static let onAccent = Color(light: 0xFFFFFF, dark: 0x0D0B1A)
 
     // MARK: Glass
-    static let glassTint = Color(light: 0xFFFFFF, dark: 0xD6CDFF, lightAlpha: 0.42, darkAlpha: 0.085)
-    static let glassBorder = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.70, darkAlpha: 0.13)
-    static let glassShadow = Color(light: 0x3C288C, dark: 0x000000, lightAlpha: 0.12, darkAlpha: 0.45)
     /// The selected tab's frosted pill.
     static let selectedPill = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.75, darkAlpha: 0.16)
     /// The selected segment in glass segmented controls (more opaque than the tab pill).
     static let selectedSegment = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.92, darkAlpha: 0.16)
-    /// Behind the floating tab bar, so content scrolling under it reads as blurred rather than
-    /// showing through the glass.
-    static let barBacking = Color(light: 0xF4F2FB, dark: 0x0D0B1A, lightAlpha: 0.35, darkAlpha: 0.62)
 
     // MARK: Status (unchanged from earlier themes)
     static let streakOrange = Color(light: 0xE8700F, dark: 0xFF9A5C)
