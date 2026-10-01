@@ -19,7 +19,7 @@ struct GlassCircleButton: View {
         }
         .buttonStyle(.plain)
         .glassEffect(
-            isProminent ? .regular.tint(.accentColor).interactive() : .regular.interactive(),
+            isProminent ? .regular.tint(Palette.accentButton).interactive() : .regular.interactive(),
             in: .circle
         )
         .accessibilityLabel(label)

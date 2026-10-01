@@ -45,6 +45,9 @@ struct AssignmentDetailView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+        // Room for the pinned button (58pt + its padding), so nothing can rest behind it.
+        .contentMargins(.bottom, isAddingStep ? 0 : Self.buttonArea, for: .scrollContent)
+        .scrollEdgeEffectStyle(.hard, for: .top)
         .scrollDismissesKeyboard(.interactively)
         .background { AmbientBackground(variant: .detail) }
         .navigationBarTitleDisplayMode(.inline)
@@ -61,12 +64,11 @@ struct AssignmentDetailView: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom) {
+        .overlay(alignment: .bottom) {
             // Hidden while typing a step so it doesn't ride up over the card on the keyboard.
             if !isAddingStep {
                 completeButton
                     .padding(.horizontal, 20)
-                    .padding(.top, 8)
                     .padding(.bottom, 4)
             }
         }
@@ -86,6 +88,8 @@ struct AssignmentDetailView: View {
             Text("This can’t be undone.")
         }
     }
+
+    private static let buttonArea: CGFloat = 58 + 4 + 16
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -151,7 +155,7 @@ struct AssignmentDetailView: View {
                     .contentShape(.capsule)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.tint(.accentColor).interactive(), in: .capsule)
+            .glassEffect(.regular.tint(Palette.accentButton).interactive(), in: .capsule)
         }
     }
 }

@@ -18,6 +18,9 @@ enum Palette {
 
     /// Accent-colored text (links, the course name on the detail screen).
     static let accentText = Color(light: 0x0A5BD6, dark: 0x8DB8FF)
+    /// Fill behind white text on solid accent buttons; darker than the dark-mode accent so
+    /// white text keeps its contrast.
+    static let accentButton = Color(light: 0x0A62E0, dark: 0x2F6EF0)
     static let streakOrange = Color(light: 0xE8700F, dark: 0xFF9A5C)
     /// Finished-on-time marker in the streak week strip.
     static let streakGreen = Color(light: 0x1F9D55, dark: 0x34C77B)

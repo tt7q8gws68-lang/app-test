@@ -15,11 +15,11 @@ The app has four tabs: **Assignments**, **Calendar**, **Courses** and **Streaks*
 - **Calendar:**
   - **Month:** a grid with course-colored dots for what's due and a ring for planned work. Tap a day to see what's due and what's planned.
   - **Weeks:** the next 8 weeks, with a load bar for each day and busy weeks (5 or more due, or an exam) flagged.
-- **Courses:** every class with its open work and next due item. Tap one to rename it, pick from 12 colors, or delete it (with or without its assignments). Classes can also be created from the New Assignment sheet or during syllabus import.
+- **Courses:** every class in one grouped list, with its initials, the next thing due and how many are open. Tap one to rename it, pick from 12 colors, or delete it (with or without its assignments). If any assignments have no class, **Assign** lets you choose one for each. Classes can also be created from the New Assignment sheet or during syllabus import.
 - **Plan to work on:** pick a day to do an assignment (on the detail screen, or long-press a row). It appears on that day in the Calendar.
-- **Streaks:**
+- **Streaks:** (the ⓘ button explains how it's counted)
   - **On time in a row:** grows when you finish before the due time, and resets on late or overdue work. Work added after it was due, like past syllabus items, doesn't count.
-  - **Also shown:** best streak, on-time rate for the last 30 days, perfect weeks, a 12-week activity grid, and 8 badges.
+  - **Also shown:** best streak, on-time rate for the last 30 days, perfect weeks, done early, this week day by day, and your latest and next badge (See all shows all 8).
   - **Celebrations:** a toast with haptics when you finish everything due today, reach a streak milestone, or unlock a badge.
 
 ## Syllabus import
