@@ -2,13 +2,25 @@
 
 A SwiftUI app for iOS 26 and later that tracks class assignments. It uses Liquid Glass and SwiftData, and follows the system light/dark setting. The HTML mockups it's built from are in `design/`.
 
+## Look and feel
+
+- **Dusk theme:** a violet palette defined once as semantic tokens in `DesignSystem/Palette.swift`, each with a light and dark value: background, text levels, accent, ring gradient, glass, and status colors. Views use only these tokens.
+- **Backdrop:** `DuskBackground` puts three soft glows behind every screen. Cards use Dusk-tinted Liquid Glass via `glassCard` / `duskGlass`, and solid accent buttons use `accentFill`.
+- **Icons:** one outline set on a 24pt grid with a 1.75 stroke, drawn from the design's SVG fragments by a small parser (`DesignSystem/SVGPath.swift`). Use `AppIcon(.calendar, size: 22)`, or `AppIcon.image(.check)` where SwiftUI needs an `Image` (menus).
+- **App icon:** regenerate it with `swift Tools/make_app_icon.swift`.
+
 Open `AssignmentTracker/AssignmentTracker.xcodeproj` in Xcode 26 or later and run the **AssignmentTracker** scheme. On first launch the app adds the sample courses and assignments from the mockups.
 
 ## Features
 
 The app has four tabs: **Assignments**, **Calendar**, **Courses** and **Streaks**.
 
-- **Assignments:** weekly progress, an All / To do / Done filter, groups (Overdue, Today, This week, Later, Earlier), check-off, and search (pull down). The 🔥 chip shows your streak and opens the Streaks tab. Long-press a row for Plan to Work On.
+- **Assignments:**
+  - A hero card with a progress ring for the week (done/total), "N to go", and what's due today.
+  - A Monday–Sunday strip with a course-colored dot per item due; tap a day to open it in Calendar.
+  - An All / To do / Done filter and a search button.
+  - Groups (Overdue, Today, This week, Later, Earlier), each one glass panel with "N left". Long-press a row to plan a day to work on it.
+- **Tab bar:** floating glass, hidden on pushed screens.
 - **Detail:** due date, priority and grade weight, type badge, a steps checklist, notes, and mark complete. Edit and Delete are in the ⋯ menu.
 - **New / Edit sheet:** title, course, due date and time, a reminder the day before (a local notification), priority, and notes.
 - **Syllabus import:** tap the document button at the top right of the Assignments list.
