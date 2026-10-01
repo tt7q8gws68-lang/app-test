@@ -12,47 +12,33 @@ struct AssignmentDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 20) {
                 header
 
-                GlassEffectContainer {
-                    HStack(alignment: .top, spacing: 12) {
-                        InfoTile(
-                            label: "Due",
-                            value: assignment.dueDate.dueDayLabel(),
-                            detail: assignment.dueDate.formatted(date: .omitted, time: .shortened),
-                            valueColor: !assignment.isCompleted && assignment.dueDate < .now ? Palette.danger : nil
-                        )
-                        InfoTile(
-                            label: "Priority",
-                            value: assignment.priority.label,
-                            detail: assignment.weight.map { $0.hasSuffix("%") ? "\($0) of grade" : $0 },
-                            valueColor: assignment.priority.color
-                        )
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                }
+                StepsCard(assignment: assignment, isAddFieldFocused: $isAddingStep)
 
                 if !assignment.isCompleted {
                     PlanCard(assignment: assignment)
                 }
 
-                StepsCard(assignment: assignment, isAddFieldFocused: $isAddingStep)
-
                 if !assignment.notes.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Notes")
-                            .font(.headline)
+                            .font(.footnote.weight(.semibold))
+                            .textCase(.uppercase)
+                            .tracking(0.6)
+                            .foregroundStyle(Palette.secondaryText)
+                            .accessibilityAddTraits(.isHeader)
                         Text(assignment.notes)
                             .font(.subheadline)
-                            .lineSpacing(4)
-                            .foregroundStyle(.secondary)
+                            .lineSpacing(3)
+                            .foregroundStyle(.primary.opacity(0.85))
                             .textSelection(.enabled)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 18)
-                    .glassCard(cornerRadius: 24)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .glassCard(cornerRadius: 22)
                 }
             }
             .padding(.horizontal, 20)
@@ -62,6 +48,7 @@ struct AssignmentDetailView: View {
         .scrollDismissesKeyboard(.interactively)
         .background { AmbientBackground(variant: .detail) }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -79,7 +66,8 @@ struct AssignmentDetailView: View {
             if !isAddingStep {
                 completeButton
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 8)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
             }
         }
         .sheet(isPresented: $isEditing) {
@@ -100,35 +88,46 @@ struct AssignmentDetailView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                if let course = assignment.course {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(course.color)
-                            .frame(width: 8, height: 8)
-                        Text(course.name)
-                    }
-                    .font(.footnote.weight(.semibold))
-                    .padding(.horizontal, 12)
-                    .frame(height: 30)
-                    .glassEffect(.regular, in: .capsule)
+        VStack(alignment: .leading, spacing: 10) {
+            if let course = assignment.course {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(course.color)
+                        .frame(width: 8, height: 8)
+                    Text(course.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Palette.accentText)
                 }
-                if assignment.kind != .assignment {
-                    Label(assignment.kind.label, systemImage: assignment.kind.systemImage)
-                        .font(.footnote.weight(.semibold))
-                        .padding(.horizontal, 12)
-                        .frame(height: 30)
-                        .glassEffect(.regular, in: .capsule)
-                }
+                .accessibilityElement(children: .combine)
             }
 
             Text(assignment.title)
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(.title, weight: .bold))
                 .tracking(-0.7)
                 .accessibilityAddTraits(.isHeader)
+
+            FlowLayout(spacing: 8) {
+                Tag(text: dueText, systemImage: "clock", color: isOverdue ? Palette.danger : nil)
+                    .accessibilityLabel("Due \(dueText)")
+                Tag(text: "\(assignment.priority.label) priority", systemImage: "flag", color: assignment.priority.color)
+                if let weight = assignment.weight {
+                    Tag(text: weight.hasSuffix("%") ? "\(weight) of grade" : weight, systemImage: "percent", color: nil)
+                }
+                if assignment.kind != .assignment {
+                    Tag(text: assignment.kind.label, systemImage: assignment.kind.systemImage, color: nil)
+                }
+            }
+            .padding(.top, 4)
         }
         .padding(.horizontal, 4)
+    }
+
+    private var isOverdue: Bool {
+        !assignment.isCompleted && assignment.dueDate < .now
+    }
+
+    private var dueText: String {
+        "\(assignment.dueDate.dueDayLabel()), \(assignment.dueDate.formatted(date: .omitted, time: .shortened))"
     }
 
     @ViewBuilder
@@ -137,46 +136,46 @@ struct AssignmentDetailView: View {
             Button(action: assignment.toggleCompleted) {
                 Label("Completed · Undo", systemImage: "checkmark")
                     .font(.headline)
-                    .foregroundStyle(.tint)
-                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .foregroundStyle(Palette.accentText)
+                    .frame(maxWidth: .infinity, minHeight: 58)
+                    .contentShape(.capsule)
             }
-            .buttonStyle(.glass)
-            .controlSize(.large)
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .capsule)
         } else {
             Button(action: assignment.toggleCompleted) {
-                Text("Mark as complete")
+                Label("Mark as complete", systemImage: "checkmark")
                     .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 58)
+                    .contentShape(.capsule)
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
+            .buttonStyle(.plain)
+            .glassEffect(.regular.tint(.accentColor).interactive(), in: .capsule)
         }
     }
 }
 
-private struct InfoTile: View {
-    let label: String
-    let value: String
-    let detail: String?
-    var valueColor: Color?
+/// A small glass capsule with an icon, for the due date, priority, weight and type.
+private struct Tag: View {
+    let text: String
+    let systemImage: String
+    /// Colors icon and text; nil uses primary text with a secondary icon.
+    let color: Color?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(Palette.secondaryText)
-            Text(value)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(valueColor ?? .primary)
-            if let detail {
-                Text(detail)
-                    .font(.subheadline)
-                    .foregroundStyle(Palette.secondaryText)
-            }
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(color ?? Palette.secondaryText)
+            Text(text)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(color ?? .primary)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(16)
-        .glassCard()
+        .padding(.leading, 12)
+        .padding(.trailing, 14)
+        .frame(minHeight: 36)
+        .glassEffect(.regular, in: .capsule)
         .accessibilityElement(children: .combine)
     }
 }

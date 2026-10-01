@@ -37,7 +37,6 @@ struct RootView: View {
             }
         }
         .id(currentDay)
-        .tabBarMinimizeBehavior(.onScrollDown)
         .overlay(alignment: .top) {
             if let celebration {
                 CelebrationToast(celebration: celebration)

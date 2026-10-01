@@ -12,35 +12,44 @@ struct StepsCard: View {
     private var steps: [Step] { assignment.sortedSteps }
 
     var body: some View {
+        let done = steps.filter(\.isDone).count
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Steps")
-                    .font(.headline)
-                Spacer()
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Steps")
+                        .font(.body.weight(.semibold))
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    if !steps.isEmpty {
+                        Text("\(done) of \(steps.count)")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Palette.secondaryText)
+                            .contentTransition(.numericText())
+                    }
+                }
                 if !steps.isEmpty {
-                    Text("\(steps.filter(\.isDone).count) of \(steps.count)")
-                        .font(.subheadline)
-                        .foregroundStyle(Palette.secondaryText)
-                        .contentTransition(.numericText())
+                    ThinProgressBar(fraction: Double(done) / Double(steps.count))
+                        .animation(.snappy, value: done)
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
 
             ForEach(steps) { step in
                 Button {
                     withAnimation(.snappy) { step.isDone.toggle() }
                 } label: {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 14) {
                         CheckCircle(isOn: step.isDone, tint: step.isDone ? .accentColor : Palette.openStep)
                         Text(step.title)
+                            .font(.body)
                             .strikethrough(step.isDone)
                             .foregroundStyle(step.isDone ? Palette.completedText : .primary)
                             .multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 12)
                     .frame(minHeight: 48)
                     .contentShape(.rect)
                 }
@@ -53,21 +62,25 @@ struct StepsCard: View {
                 }
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 Image(systemName: "plus")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(Palette.accentText)
                     .frame(width: 24, height: 24)
-                TextField("Add step", text: $newStepTitle)
-                    .focused(isAddFieldFocused)
-                    .submitLabel(.done)
-                    .onSubmit(addStep)
+                    .accessibilityHidden(true)
+                TextField(
+                    "Add step", text: $newStepTitle,
+                    prompt: Text("Add step").foregroundStyle(Palette.accentText).fontWeight(.medium)
+                )
+                .focused(isAddFieldFocused)
+                .submitLabel(.done)
+                .onSubmit(addStep)
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 12)
             .frame(minHeight: 48)
         }
-        .padding(8)
-        .glassCard(cornerRadius: 24)
+        .padding(6)
+        .glassCard(cornerRadius: 26)
     }
 
     private func addStep() {

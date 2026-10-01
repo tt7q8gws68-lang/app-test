@@ -1,6 +1,8 @@
 import SwiftUI
 
 /// A 44pt circular icon button. Icon-only, so it always needs an accessibility label.
+/// Drawn with `glassEffect` directly: the system glass button styles add their own padding,
+/// which makes them larger than the 44pt in the designs.
 struct GlassCircleButton: View {
     let systemImage: String
     let label: String
@@ -11,24 +13,16 @@ struct GlassCircleButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 18, weight: isProminent ? .bold : .semibold))
+                .foregroundStyle(isProminent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
                 .frame(width: 44, height: 44)
                 .contentShape(.circle)
         }
-        .buttonBorderShape(.circle)
-        .modifier(CircleButtonStyle(isProminent: isProminent))
+        .buttonStyle(.plain)
+        .glassEffect(
+            isProminent ? .regular.tint(.accentColor).interactive() : .regular.interactive(),
+            in: .circle
+        )
         .accessibilityLabel(label)
-    }
-}
-
-private struct CircleButtonStyle: ViewModifier {
-    let isProminent: Bool
-
-    func body(content: Content) -> some View {
-        if isProminent {
-            content.buttonStyle(.glassProminent)
-        } else {
-            content.buttonStyle(.glass).tint(.primary)
-        }
     }
 }
 

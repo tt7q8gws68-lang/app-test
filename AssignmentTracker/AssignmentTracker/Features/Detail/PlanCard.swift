@@ -12,43 +12,53 @@ struct PlanCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
+            Image(systemName: assignment.plannedDate == nil ? "calendar.badge.plus" : "calendar.badge.clock")
+                .font(.title3)
+                .foregroundStyle(Palette.accentText)
+                .frame(width: 26)
+                .accessibilityHidden(true)
+
             if let planned = assignment.plannedDate {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Work day")
+                        .font(.body.weight(.semibold))
+                    Text(planHint(for: planned))
+                        .font(.footnote)
+                        .foregroundStyle(planned > assignment.dueDate ? Palette.danger : Palette.secondaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 DatePicker(
+                    "Work day",
                     selection: Binding(get: { planned }, set: { assignment.plan(for: $0) }),
                     in: Calendar.current.startOfDay(for: .now)...,
                     displayedComponents: .date
-                ) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        RowLabel("Work on", systemImage: "calendar.badge.clock")
-                        Text(planHint(for: planned))
-                            .font(.caption)
-                            .foregroundStyle(planned > assignment.dueDate ? Palette.danger : Palette.secondaryText)
-                            .padding(.leading, 36)
-                    }
-                }
+                )
+                .labelsHidden()
                 Button {
                     assignment.plan(for: nil)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title3)
                         .foregroundStyle(Palette.chevron)
+                        .frame(width: 32, height: 44)
+                        .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear plan")
+                .accessibilityLabel("Clear work day")
             } else {
                 Button {
                     assignment.plan(for: suggestedDay)
                 } label: {
-                    HStack {
+                    HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
-                            RowLabel("Plan a day to work on it", systemImage: "calendar.badge.plus")
-                            Text("Shows up on that day in Calendar")
-                                .font(.caption)
+                            Text("Plan a work day")
+                                .font(.body.weight(.semibold))
+                            Text("Adds it to your Calendar")
+                                .font(.footnote)
                                 .foregroundStyle(Palette.secondaryText)
-                                .padding(.leading, 36)
                         }
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         Image(systemName: "chevron.right")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(Palette.chevron)
@@ -56,12 +66,12 @@ struct PlanCard: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint("Plans it for the day before it’s due")
             }
         }
-        .frame(minHeight: 52)
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .glassCard()
+        .frame(minHeight: 60)
+        .glassCard(cornerRadius: 22)
     }
 
     private func planHint(for planned: Date) -> String {
