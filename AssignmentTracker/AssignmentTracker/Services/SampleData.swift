@@ -3,7 +3,14 @@ import SwiftData
 
 /// The courses and assignments from the mockups, placed relative to today.
 enum SampleData {
-    static func seedIfNeeded(_ context: ModelContext) {
+    private static let seededKey = "didSeedSampleData"
+
+    /// Adds the sample data on first launch only. Checked by a flag rather than "no courses yet"
+    /// so that deleting every class doesn't bring the samples back.
+    static func seedIfNeeded(_ context: ModelContext, defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: seededKey) else { return }
+        defaults.set(true, forKey: seededKey)
+        // Installs from before this flag existed already have their data.
         let courseCount = (try? context.fetchCount(FetchDescriptor<Course>())) ?? 0
         guard courseCount == 0 else { return }
         insert(into: context)

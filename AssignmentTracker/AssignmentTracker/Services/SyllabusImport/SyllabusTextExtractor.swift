@@ -135,7 +135,9 @@ nonisolated struct SyllabusTextExtractor {
 
     /// Photos and document-camera scans.
     @concurrent
-    func extract(images: [CGImage], name: String) async throws -> ExtractedSyllabus {
+    /// `originalData` (the photo files) is used to recognize a repeat import; scans have none,
+    /// so their recognized text stands in.
+    func extract(images: [CGImage], name: String, originalData: [Data] = []) async throws -> ExtractedSyllabus {
         var pages: [String] = []
         for image in images {
             pages.append(try await recognizeText(in: image))
@@ -144,9 +146,9 @@ nonisolated struct SyllabusTextExtractor {
         guard text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 40 else {
             throw SyllabusImportError.noTextFound
         }
-        let pngData = images.compactMap(Self.pngData)
+        let fingerprint = Self.fingerprint(of: originalData.isEmpty ? [Data(text.utf8)] : originalData)
         return ExtractedSyllabus(
-            text: text, sourceName: name, fingerprint: Self.fingerprint(of: pngData),
+            text: text, sourceName: name, fingerprint: fingerprint,
             pageCount: images.count, recognizedPageCount: images.count
         )
     }
@@ -227,7 +229,8 @@ nonisolated struct SyllabusTextExtractor {
     /// Renders a PDF page at 2× on white, for OCR.
     private static func render(_ page: PDFPage) -> CGImage? {
         let bounds = page.bounds(for: .mediaBox)
-        let scale: CGFloat = 2
+        // 2× for a letter page, but capped so an oversized page can't exhaust memory.
+        let scale = min(2, 3_000 / max(bounds.width, bounds.height, 1))
         let width = Int(bounds.width * scale), height = Int(bounds.height * scale)
         guard width > 0, height > 0,
               let context = CGContext(
@@ -279,13 +282,6 @@ nonisolated struct SyllabusTextExtractor {
             kCGImageSourceThumbnailMaxPixelSize: 4000,
         ]
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
-    }
-
-    private static func pngData(_ image: CGImage) -> Data? {
-        let data = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else { return nil }
-        CGImageDestinationAddImage(destination, image, nil)
-        return CGImageDestinationFinalize(destination) ? data as Data : nil
     }
 
     static func fingerprint(of parts: [Data]) -> String {

@@ -14,7 +14,7 @@ final class SyllabusImportModel {
     }
 
     var course: Course? {
-        didSet { if course != oldValue { refreshDuplicates() } }
+        didSet { if course !== oldValue { refreshDuplicates() } }
     }
     var phase: Phase = .choosingSource
     var error: SyllabusImportError?
@@ -84,7 +84,7 @@ final class SyllabusImportModel {
         await run(named: name) {
             let images = photos.compactMap(SyllabusTextExtractor.cgImage(from:))
             guard !images.isEmpty else { throw SyllabusImportError.unreadable("The photos couldn’t be opened.") }
-            return try await SyllabusTextExtractor().extract(images: images, name: name)
+            return try await SyllabusTextExtractor().extract(images: images, name: name, originalData: photos)
         }
     }
 

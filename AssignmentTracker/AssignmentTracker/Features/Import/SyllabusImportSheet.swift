@@ -108,7 +108,7 @@ struct SyllabusImportSheet: View {
                 .ignoresSafeArea()
             }
             .sheet(isPresented: $isAddingCourse) {
-                NewCourseSheet { model.course = $0 }
+                CourseEditorSheet { model.course = $0 }
             }
         }
         .interactiveDismissDisabled(isWorking || model.phase == .reviewing)

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import Testing
 @testable import AssignmentTracker
 
@@ -143,5 +144,59 @@ struct HabitStatsTests {
         after.openToday = 0
         #expect(after.celebration(since: before)?.title == "All done for today")
         #expect(after.celebration(since: after) == nil)
+    }
+}
+
+struct SampleDataSeedingTests {
+    @Test @MainActor func seedsOnlyOnceEvenAfterEverythingIsDeleted() throws {
+        let defaults = UserDefaults(suiteName: "SampleDataSeedingTests")!
+        defaults.removePersistentDomain(forName: "SampleDataSeedingTests")
+        let container = try ModelContainer(for: ModelContainer.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+
+        SampleData.seedIfNeeded(context, defaults: defaults)
+        #expect(try context.fetchCount(FetchDescriptor<Course>()) == 4)
+
+        try context.fetch(FetchDescriptor<Assignment>()).forEach(context.delete)
+        try context.fetch(FetchDescriptor<Course>()).forEach(context.delete)
+        try context.save()
+        #expect(try context.fetchCount(FetchDescriptor<Course>()) == 0)
+        SampleData.seedIfNeeded(context, defaults: defaults)
+        #expect(try context.fetchCount(FetchDescriptor<Course>()) == 0)
+    }
+}
+
+struct ZipArchiveRobustnessTests {
+    @Test func emptyDeflatedEntryIsAnErrorNotACrash() throws {
+        // A one-entry ZIP whose deflated entry claims 10 bytes but carries none.
+        var zip = Data()
+        func u16(_ v: UInt16) { zip.append(contentsOf: [UInt8(v & 0xFF), UInt8(v >> 8)]) }
+        func u32(_ v: UInt32) { (0..<4).forEach { zip.append(UInt8((v >> (8 * $0)) & 0xFF)) } }
+        let name = Array("word/document.xml".utf8)
+        u32(0x0403_4B50); u16(20); u16(0); u16(8); u16(0); u16(0); u32(0); u32(0); u32(10); u16(UInt16(name.count)); u16(0)
+        zip.append(contentsOf: name)
+        let central = UInt32(zip.count)
+        u32(0x0201_4B50); u16(20); u16(20); u16(0); u16(8); u16(0); u16(0); u32(0); u32(0); u32(10)
+        u16(UInt16(name.count)); u16(0); u16(0); u16(0); u16(0); u32(0); u32(0)
+        zip.append(contentsOf: name)
+        let size = UInt32(zip.count) - central
+        u32(0x0605_4B50); u16(0); u16(0); u16(1); u16(1); u32(size); u32(central); u16(0)
+
+        let archive = try ZipArchive(data: zip)
+        #expect(throws: ZipArchive.ZipError.corrupt) { try archive.contents(of: "word/document.xml") }
+    }
+}
+
+struct CourseColorTests {
+    @Test func everyColorHasADistinctName() {
+        #expect(CourseColor.allCases.count == 12)
+        #expect(Set(CourseColor.allCases.map(\.name)).count == 12)
+    }
+
+    @Test func existingStoredColorsStillDecode() throws {
+        for raw in ["blue", "orange", "purple", "teal"] {
+            let decoded = try JSONDecoder().decode(CourseColor.self, from: Data("\"\(raw)\"".utf8))
+            #expect(decoded.rawValue == raw)
+        }
     }
 }

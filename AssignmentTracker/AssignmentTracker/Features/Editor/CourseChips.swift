@@ -14,7 +14,7 @@ struct CourseChips: View {
                 }
                 if let onAddCourse {
                     Button(action: onAddCourse) {
-                        Label("New Course", systemImage: "plus")
+                        Label("New Class", systemImage: "plus")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(Color.accentColor)
                             .padding(.horizontal, 16)

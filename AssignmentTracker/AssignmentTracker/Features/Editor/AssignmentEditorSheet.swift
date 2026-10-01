@@ -7,6 +7,7 @@ struct AssignmentEditorSheet: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @Query(sort: \Course.sortIndex) private var courses: [Course]
 
     @State private var title: String
@@ -15,6 +16,9 @@ struct AssignmentEditorSheet: View {
     @State private var remindDayBefore: Bool
     @State private var priority: Priority
     @State private var notes: String
+    @State private var kind: AssignmentKind
+    @State private var isAddingCourse = false
+    @State private var notificationsBlocked = false
     @FocusState private var focusedField: Field?
 
     private enum Field { case title, notes }
@@ -27,6 +31,7 @@ struct AssignmentEditorSheet: View {
         _remindDayBefore = State(initialValue: assignment?.remindDayBefore ?? true)
         _priority = State(initialValue: assignment?.priority ?? .medium)
         _notes = State(initialValue: assignment?.notes ?? "")
+        _kind = State(initialValue: assignment?.kind ?? .assignment)
     }
 
     private var trimmedTitle: String {
@@ -41,7 +46,7 @@ struct AssignmentEditorSheet: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         SectionHeader("Course")
-                        CourseChips(courses: courses, selection: $course)
+                        CourseChips(courses: courses, selection: $course) { isAddingCourse = true }
                     }
 
                     scheduleCard
@@ -75,8 +80,14 @@ struct AssignmentEditorSheet: View {
                 }
             }
             .onAppear {
-                if course == nil { course = courses.first }
-                if assignment == nil { focusedField = .title }
+                // Only a new assignment gets a default class; editing keeps "no class" as is.
+                if assignment == nil {
+                    if course == nil { course = courses.first }
+                    focusedField = .title
+                }
+            }
+            .sheet(isPresented: $isAddingCourse) {
+                CourseEditorSheet { course = $0 }
             }
         }
     }
@@ -102,6 +113,19 @@ struct AssignmentEditorSheet: View {
 
     private var scheduleCard: some View {
         VStack(spacing: 0) {
+            HStack {
+                RowLabel("Type", systemImage: kind.systemImage)
+                Spacer()
+                Picker("Type", selection: $kind) {
+                    ForEach(AssignmentKind.allCases) { Label($0.label, systemImage: $0.systemImage).tag($0) }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
+            .frame(minHeight: 52)
+
+            Divider()
+
             DatePicker(selection: $dueDate, displayedComponents: .date) {
                 RowLabel("Due date", systemImage: "calendar")
             }
@@ -122,7 +146,21 @@ struct AssignmentEditorSheet: View {
             .tint(Palette.success)
             .frame(minHeight: 52)
             .onChange(of: remindDayBefore) { _, isOn in
-                if isOn { Task { await ReminderScheduler.requestAuthorization() } }
+                guard isOn else { notificationsBlocked = false; return }
+                Task { notificationsBlocked = !(await ReminderScheduler.requestAuthorization()) }
+            }
+
+            if notificationsBlocked && remindDayBefore {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                } label: {
+                    Label("Notifications are off for this app. Turn them on in Settings.", systemImage: "bell.slash")
+                        .font(.footnote)
+                        .foregroundStyle(Palette.warning)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 10)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 16)
@@ -162,6 +200,7 @@ struct AssignmentEditorSheet: View {
         target.remindDayBefore = remindDayBefore
         target.priority = priority
         target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        target.kind = kind
 
         if remindDayBefore {
             Task {
