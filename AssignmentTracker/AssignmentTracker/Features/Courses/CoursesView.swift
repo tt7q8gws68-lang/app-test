@@ -34,10 +34,10 @@ struct CoursesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     ScreenHeader(subtitle: subtitle, title: "Courses") {
-                        GlassCircleButton(systemImage: "doc.text.viewfinder", label: "Import syllabus") {
+                        GlassCircleButton(icon: .scan, label: "Import syllabus") {
                             isImporting = true
                         }
-                        GlassCircleButton(systemImage: "plus", label: "Add course", isProminent: true) {
+                        GlassCircleButton(icon: .add, label: "Add course", isProminent: true) {
                             isAdding = true
                         }
                     }
@@ -65,7 +65,8 @@ struct CoursesView: View {
                 .padding(.bottom, 24)
             }
             .scrollEdgeEffectStyle(.soft, for: .top)
-            .background { AmbientBackground(variant: .courses) }
+            .clearsTabBar()
+            .background { DuskBackground() }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .sheet(item: $editing) { CourseEditorSheet(course: $0) }
             .sheet(isPresented: $isAdding) { CourseEditorSheet() }
@@ -93,8 +94,7 @@ struct CoursesView: View {
         let text = count == 1 ? "1 assignment has no course" : "\(count) assignments have no course"
         return Button { isAssigning = true } label: {
             HStack(spacing: 12) {
-                Image(systemName: "doc.text")
-                    .font(.body)
+                AppIcon(.notes, size: 22)
                     .foregroundStyle(Palette.secondaryText)
                     .frame(width: 24)
                 Text(text)
@@ -126,7 +126,7 @@ private struct CourseRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(course.name)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Palette.text)
                     .lineLimit(1)
                 Text(summary.detail())
                     .font(.subheadline)
@@ -149,14 +149,13 @@ private struct CourseRow: View {
         case .open(let count):
             Text("\(count)")
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(Palette.onFill)
+                .foregroundStyle(Palette.onAccent)
                 .padding(.horizontal, 9)
                 .frame(minWidth: 28, minHeight: 28)
                 .background(course.color, in: .capsule)
                 .accessibilityLabel("\(count) to do")
         case .caughtUp:
-            Image(systemName: "checkmark")
-                .font(.caption.weight(.heavy))
+            AppIcon(.check, size: 14, weight: 3)
                 .foregroundStyle(Palette.secondaryText)
                 .frame(width: 28, height: 28)
                 .background(Palette.faintFill, in: .circle)

@@ -1,6 +1,7 @@
 import SwiftData
 import SwiftUI
 
+/// The main screen: this week at a glance, then assignments grouped by when they're due.
 struct AssignmentsView: View {
     enum Filter: String, CaseIterable, Identifiable {
         case all = "All"
@@ -13,30 +14,48 @@ struct AssignmentsView: View {
     private struct Section: Identifiable {
         let bucket: DueBucket
         let items: [Assignment]
+        /// Open items in the whole bucket, regardless of the filter.
+        let left: Int
         var id: DueBucket { bucket }
     }
 
-    /// Current on-time streak, shown as a chip that opens the Streaks tab.
-    var streak = 0
-    var onShowStreaks: () -> Void = {}
+    /// Opens a strip day in Calendar.
+    var onShowDay: (Date) -> Void = { _ in }
 
     @Query(sort: \Assignment.dueDate) private var assignments: [Assignment]
     @State private var filter: Filter = .all
     @State private var searchText = ""
+    @State private var isSearching = false
     @State private var isAddingAssignment = false
-    @State private var isImportingSyllabus = false
+    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    WeeklyProgressCard(done: weekDone, total: weekTotal)
-
-                    Picker("Show", selection: $filter.animation(.snappy)) {
-                        ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
+                    ScreenHeader(
+                        subtitle: Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
+                        title: "Assignments"
+                    ) {
+                        GlassCircleButton(icon: .search, label: isSearching ? "Close search" : "Search") {
+                            withAnimation(.snappy) { toggleSearch() }
+                        }
+                        GlassCircleButton(icon: .add, label: "New assignment", isProminent: true) {
+                            isAddingAssignment = true
+                        }
                     }
-                    .pickerStyle(.segmented)
-                    .controlSize(.large)
+
+                    if isSearching {
+                        searchField
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    WeekHeroCard(summary: hero, onShowDay: onShowDay)
+
+                    GlassSegmented(
+                        options: Filter.allCases.map { ($0, $0.rawValue) },
+                        selection: $filter
+                    )
 
                     if sections.isEmpty {
                         Text(searchText.isEmpty ? "Nothing here yet." : "No matching assignments.")
@@ -49,88 +68,100 @@ struct AssignmentsView: View {
 
                     ForEach(sections) { section in
                         VStack(alignment: .leading, spacing: 10) {
-                            SectionHeader(section.bucket.title)
-                            ForEach(section.items) { assignment in
-                                AssignmentRow(assignment: assignment)
+                            HStack(alignment: .firstTextBaseline) {
+                                SectionHeader(section.bucket.title)
+                                Spacer()
+                                Text(section.left == 0 ? "All done" : "\(section.left) left")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Palette.secondaryText)
+                                    .padding(.trailing, 4)
                             }
+                            AssignmentGroup(assignments: section.items)
                         }
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 4)
+                .padding(.top, 8)
                 .padding(.bottom, 24)
+                .animation(.snappy, value: filter)
             }
-            .background { AmbientBackground(variant: .list) }
-            .navigationTitle("Assignments")
-            .navigationSubtitle(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-            .searchable(text: $searchText, placement: .navigationBarDrawer, prompt: "Search assignments")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: onShowStreaks) {
-                        // A plain HStack: toolbar buttons would reduce a Label to its icon.
-                        HStack(spacing: 4) {
-                            Image(systemName: "flame.fill")
-                                .foregroundStyle(streak > 0 ? AnyShapeStyle(.orange.gradient) : AnyShapeStyle(Palette.chevron))
-                            Text("\(streak)")
-                                .contentTransition(.numericText())
-                        }
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 6)
-                    }
-                    .accessibilityLabel("Streak: \(streak) on time in a row")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Import Syllabus", systemImage: "doc.text.viewfinder") {
-                        isImportingSyllabus = true
-                    }
-                }
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("New Assignment", systemImage: "plus") {
-                        isAddingAssignment = true
-                    }
-                    .buttonStyle(.glassProminent)
-                }
-            }
+            .scrollIndicators(.hidden)
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .scrollDismissesKeyboard(.interactively)
+            .clearsTabBar()
+            .background { DuskBackground() }
+            .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: Assignment.self) { assignment in
                 AssignmentDetailView(assignment: assignment)
             }
             .sheet(isPresented: $isAddingAssignment) {
                 AssignmentEditorSheet()
             }
-            .sheet(isPresented: $isImportingSyllabus) {
-                SyllabusImportSheet()
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            AppIcon(.search, size: 18)
+                .foregroundStyle(Palette.secondaryText)
+            TextField("Search assignments", text: $searchText)
+                .focused($isSearchFocused)
+                .submitLabel(.search)
+                .autocorrectionDisabled()
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    AppIcon(.close, size: 16)
+                        .foregroundStyle(Palette.secondaryText)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, searchText.isEmpty ? 16 : 0)
+        .frame(minHeight: 48)
+        .glassCard(cornerRadius: 24)
+    }
+
+    private func toggleSearch() {
+        isSearching.toggle()
+        if isSearching {
+            isSearchFocused = true
+        } else {
+            searchText = ""
+            isSearchFocused = false
         }
     }
 
     // MARK: - Derived data
 
-    private var weekAssignments: [Assignment] {
-        let window = WeekWindow()
-        return assignments.filter { window.contains($0.dueDate) }
+    private var hero: WeekHeroSummary {
+        WeekHeroSummary(items: assignments.map {
+            WeekHeroSummary.Item(dueDate: $0.dueDate, isCompleted: $0.isCompleted, color: $0.course?.colorToken)
+        })
     }
-
-    private var weekDone: Int { weekAssignments.filter(\.isCompleted).count }
-    private var weekTotal: Int { weekAssignments.count }
 
     private var sections: [Section] {
         let now = Date.now
-        let visible = assignments.filter { assignment in
-            switch filter {
-            case .all: true
-            case .toDo: !assignment.isCompleted
-            case .done: assignment.isCompleted
-            }
-        }
-        .filter(matchesSearch)
-
-        let grouped = Dictionary(grouping: visible) { DueBucket.of($0, now: now) }
+        let byBucket = Dictionary(grouping: assignments) { DueBucket.of($0, now: now) }
         return DueBucket.allCases.compactMap { bucket in
-            guard var items = grouped[bucket], !items.isEmpty else { return nil }
+            let all = byBucket[bucket] ?? []
+            var items = all.filter { assignment in
+                switch filter {
+                case .all: true
+                case .toDo: !assignment.isCompleted
+                case .done: assignment.isCompleted
+                }
+            }
+            .filter(matchesSearch)
+            guard !items.isEmpty else { return nil }
             // Most recent first for past work; soonest first everywhere else.
             if bucket == .earlier { items.reverse() }
-            return Section(bucket: bucket, items: items)
+            return Section(bucket: bucket, items: items, left: all.filter { !$0.isCompleted }.count)
         }
     }
 
@@ -140,6 +171,94 @@ struct AssignmentsView: View {
         return assignment.title.localizedStandardContains(query)
             || (assignment.course?.name.localizedStandardContains(query) ?? false)
             || assignment.notes.localizedStandardContains(query)
+    }
+}
+
+/// The hero card: a progress ring for the week, the count still to go, and a Monday–Sunday strip
+/// with a dot per assignment due each day.
+private struct WeekHeroCard: View {
+    let summary: WeekHeroSummary
+    let onShowDay: (Date) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 16) {
+                ProgressRing(fraction: summary.fraction) {
+                    Text("\(summary.done)/\(summary.total)")
+                        .font(.system(size: 18, weight: .bold))
+                        .tracking(-0.3)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("This week")
+                .accessibilityValue("\(summary.done) of \(summary.total) done")
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("This week")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(Palette.secondaryText)
+                    Text("\(summary.remaining) to go")
+                        .font(.system(size: 28, weight: .bold))
+                        .tracking(-0.5)
+                        .contentTransition(.numericText())
+                    Text(summary.dueTodayText)
+                        .font(.subheadline)
+                        .foregroundStyle(Palette.secondaryText)
+                }
+                .accessibilityElement(children: .combine)
+            }
+
+            Rectangle()
+                .fill(Palette.hairline)
+                .frame(height: 1)
+                .accessibilityHidden(true)
+
+            HStack(spacing: 0) {
+                ForEach(summary.days, id: \.date) { day in
+                    Button { onShowDay(day.date) } label: {
+                        StripDay(day: day)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(WeekHeroSummary.accessibilityLabel(for: day))
+                    .accessibilityHint("Opens this day in Calendar")
+                }
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
+        .glassCard(cornerRadius: 28)
+        .animation(.snappy, value: summary)
+    }
+}
+
+private struct StripDay: View {
+    let day: WeekHeroSummary.Day
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(day.date.formatted(.dateTime.weekday(.narrow)))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Palette.secondaryText)
+            Text(day.date.formatted(.dateTime.day()))
+                .font(.system(size: 15, weight: day.isToday ? .bold : .medium))
+                .foregroundStyle(day.isToday ? Palette.onAccent : (day.isPast ? Palette.mutedNumber : Palette.text))
+                .frame(width: 34, height: 34)
+                .background {
+                    if day.isToday { Circle().fill(Palette.accent) }
+                }
+            HStack(spacing: 3) {
+                ForEach(Array(day.dots.prefix(4).enumerated()), id: \.offset) { _, color in
+                    Circle()
+                        .fill(color?.color ?? CourseColor.graphite.color)
+                        .frame(width: 5, height: 5)
+                }
+            }
+            .frame(height: 5)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .contentShape(.rect)
     }
 }
 

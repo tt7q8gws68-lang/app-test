@@ -62,12 +62,15 @@ struct CourseEditorSheet: View {
                         Button(role: .destructive) {
                             isConfirmingDelete = true
                         } label: {
+                            // No delete glyph in the app's icon set; SF Symbol fallback.
                             Label("Delete Class", systemImage: "trash")
-                                .frame(maxWidth: .infinity, minHeight: 30)
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(Palette.danger)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .contentShape(.capsule)
                         }
-                        .buttonStyle(.glass)
-                        .controlSize(.large)
-                        .tint(Palette.danger)
+                        .buttonStyle(.plain)
+                        .duskGlass(in: Capsule(), interactive: true)
                         .confirmationDialog(
                             "Delete “\(course.name)”?", isPresented: $isConfirmingDelete, titleVisibility: .visible
                         ) {
@@ -96,10 +99,10 @@ struct CourseEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", systemImage: "xmark", role: .cancel) { dismiss() }
+                    Button(role: .cancel) { dismiss() } label: { Label("Cancel", appIcon: .close) }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(course == nil ? "Add" : "Save", systemImage: "checkmark", role: .confirm, action: save)
+                    Button(role: .confirm, action: save) { Label(course == nil ? "Add" : "Save", appIcon: .check) }
                         .disabled(trimmedName.isEmpty || isDuplicateName)
                 }
             }
@@ -153,9 +156,8 @@ struct ColorGrid: View {
                         .frame(width: 38, height: 38)
                         .overlay {
                             if option == selection {
-                                Image(systemName: "checkmark")
-                                    .font(.footnote.weight(.bold))
-                                    .foregroundStyle(Palette.onFill)
+                                AppIcon(.check, size: 14, weight: 3)
+                                    .foregroundStyle(Palette.onAccent)
                             }
                         }
                         .padding(3)

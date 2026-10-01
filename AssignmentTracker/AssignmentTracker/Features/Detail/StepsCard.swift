@@ -41,11 +41,11 @@ struct StepsCard: View {
                     withAnimation(.snappy) { step.isDone.toggle() }
                 } label: {
                     HStack(spacing: 14) {
-                        CheckCircle(isOn: step.isDone, tint: step.isDone ? .accentColor : Palette.openStep)
+                        CheckCircle(isOn: step.isDone, tint: step.isDone ? Palette.accent : Palette.mutedNumber)
                         Text(step.title)
                             .font(.body)
                             .strikethrough(step.isDone)
-                            .foregroundStyle(step.isDone ? Palette.completedText : .primary)
+                            .foregroundStyle(step.isDone ? Palette.completedText : Palette.text)
                             .multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
                     }
@@ -63,8 +63,7 @@ struct StepsCard: View {
             }
 
             HStack(spacing: 14) {
-                Image(systemName: "plus")
-                    .font(.body.weight(.semibold))
+                AppIcon(.add, size: 22)
                     .foregroundStyle(Palette.accentText)
                     .frame(width: 24, height: 24)
                     .accessibilityHidden(true)

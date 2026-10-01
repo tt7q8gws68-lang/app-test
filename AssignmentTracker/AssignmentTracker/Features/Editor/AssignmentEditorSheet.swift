@@ -67,15 +67,15 @@ struct AssignmentEditorSheet: View {
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background { AmbientBackground(variant: .list).opacity(0.6) }
+            .background { DuskBackground() }
             .navigationTitle(assignment == nil ? "New Assignment" : "Edit Assignment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", systemImage: "xmark", role: .cancel) { dismiss() }
+                    Button(role: .cancel) { dismiss() } label: { Label("Cancel", appIcon: .close) }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", systemImage: "checkmark", role: .confirm, action: save)
+                    Button(role: .confirm, action: save) { Label("Save", appIcon: .check) }
                         .disabled(trimmedTitle.isEmpty)
                 }
             }
@@ -115,10 +115,10 @@ struct AssignmentEditorSheet: View {
     private var scheduleCard: some View {
         VStack(spacing: 0) {
             HStack {
-                RowLabel("Type", systemImage: kind.systemImage)
+                RowLabel("Type", icon: kind.icon)
                 Spacer()
                 Picker("Type", selection: $kind) {
-                    ForEach(AssignmentKind.allCases) { Label($0.label, systemImage: $0.systemImage).tag($0) }
+                    ForEach(AssignmentKind.allCases) { Label($0.label, appIcon: $0.icon).tag($0) }
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
@@ -128,23 +128,23 @@ struct AssignmentEditorSheet: View {
             Divider()
 
             DatePicker(selection: $dueDate, displayedComponents: .date) {
-                RowLabel("Due date", systemImage: "calendar")
+                RowLabel("Due date", icon: .calendar)
             }
             .frame(minHeight: 52)
 
             Divider()
 
             DatePicker(selection: $dueDate, displayedComponents: .hourAndMinute) {
-                RowLabel("Time", systemImage: "clock")
+                RowLabel("Time", icon: .clock)
             }
             .frame(minHeight: 52)
 
             Divider()
 
             Toggle(isOn: $remindDayBefore) {
-                RowLabel("Remind me a day before", systemImage: "bell")
+                RowLabel("Remind me a day before", icon: .reminder)
             }
-            .tint(Palette.success)
+            .tint(Palette.onTimeGreen)
             .frame(minHeight: 52)
             .onChange(of: remindDayBefore) { _, isOn in
                 guard isOn else { notificationsBlocked = false; return }
@@ -155,7 +155,7 @@ struct AssignmentEditorSheet: View {
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 } label: {
-                    Label("Notifications are off for this app. Turn them on in Settings.", systemImage: "bell.slash")
+                    Label { Text("Notifications are off for this app. Turn them on in Settings.") } icon: { AppIcon(.reminder, size: 16) }
                         .font(.footnote)
                         .foregroundStyle(Palette.warning)
                         .frame(maxWidth: .infinity, alignment: .leading)

@@ -78,7 +78,8 @@ private struct WeekSection: View {
                 SectionHeader(title)
                 Spacer()
                 if isBusy {
-                    Label("Busy", systemImage: "exclamationmark.triangle.fill")
+                    // No warning glyph in the app's icon set; outline SF Symbol fallback.
+                    Label("Busy", systemImage: "exclamationmark.triangle")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Palette.warning)
                 }
@@ -90,7 +91,7 @@ private struct WeekSection: View {
 
             if !items.isEmpty {
                 DayLoadStrip(start: start, items: open)
-                ForEach(open) { AssignmentRow(assignment: $0) }
+                AssignmentGroup(assignments: open)
             }
         }
     }
@@ -114,7 +115,7 @@ private struct DayLoadStrip: View {
                         .frame(height: CGFloat(4 + min(dueThatDay.count, 4) * 7))
                     Text(day.formatted(.dateTime.weekday(.narrow)))
                         .font(.caption2.weight(calendar.isDateInToday(day) ? .bold : .regular))
-                        .foregroundStyle(calendar.isDateInToday(day) ? Color.accentColor : Palette.secondaryText)
+                        .foregroundStyle(calendar.isDateInToday(day) ? Palette.accent : Palette.secondaryText)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
@@ -130,6 +131,6 @@ private struct DayLoadStrip: View {
 
     private func barColor(for items: [Assignment]) -> Color {
         if items.contains(where: { $0.kind == .exam }) { return Palette.danger }
-        return items.count >= 3 ? Palette.warning : Color.accentColor
+        return items.count >= 3 ? Palette.warning : Palette.accent
     }
 }

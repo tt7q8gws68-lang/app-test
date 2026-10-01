@@ -6,51 +6,62 @@ import SwiftUI
 struct CalendarView: View {
     enum Mode: String, CaseIterable, Identifiable {
         case month = "Month"
-        case weeks = "Weeks"
+        case week = "Week"
         var id: Self { self }
     }
+
+    /// Owned by `RootView`, so the Assignments week strip can open a day here.
+    @Binding var selectedDay: Date
 
     @Query(sort: \Assignment.dueDate) private var assignments: [Assignment]
     @State private var mode: Mode = .month
     @State private var month = Calendar.current.dateInterval(of: .month, for: .now)!.start
-    @State private var selectedDay = Calendar.current.startOfDay(for: .now)
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Picker("View", selection: $mode.animation(.snappy)) {
-                        ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+                    ScreenHeader(
+                        subtitle: Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
+                        title: "Calendar"
+                    ) {
+                        GlassCapsuleButton(title: "Today") {
+                            withAnimation(.snappy) {
+                                mode = .month
+                                selectedDay = Calendar.current.startOfDay(for: .now)
+                            }
+                        }
                     }
-                    .pickerStyle(.segmented)
-                    .controlSize(.large)
+
+                    GlassSegmented(options: Mode.allCases.map { ($0, $0.rawValue) }, selection: $mode)
 
                     switch mode {
                     case .month:
                         MonthGridCard(month: $month, selectedDay: $selectedDay, assignments: assignments)
                         DayAgenda(day: selectedDay, assignments: assignments)
-                    case .weeks:
+                    case .week:
                         WeeksAheadList(assignments: assignments)
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 4)
+                .padding(.top, 8)
                 .padding(.bottom, 24)
             }
-            .background { AmbientBackground(variant: .detail) }
-            .navigationTitle("Calendar")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Today") {
-                        withAnimation(.snappy) {
-                            selectedDay = Calendar.current.startOfDay(for: .now)
-                            month = Calendar.current.dateInterval(of: .month, for: .now)!.start
-                        }
-                    }
-                }
-            }
+            .scrollIndicators(.hidden)
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .clearsTabBar()
+            .background { DuskBackground() }
+            .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: Assignment.self) { assignment in
                 AssignmentDetailView(assignment: assignment)
+            }
+            .onChange(of: selectedDay, initial: true) { _, day in
+                // A day picked elsewhere (the Assignments strip) brings its month into view.
+                let calendar = Calendar.current
+                if !calendar.isDate(day, equalTo: month, toGranularity: .month) {
+                    month = calendar.dateInterval(of: .month, for: day)!.start
+                }
+                mode = .month
             }
         }
     }
@@ -96,9 +107,9 @@ struct MonthGridCard: View {
                     .font(.title3.weight(.bold))
                     .contentTransition(.numericText())
                 Spacer()
-                Button { step(-1) } label: { Image(systemName: "chevron.left").frame(width: 36, height: 36) }
+                Button { step(-1) } label: { AppIcon(.back, size: 20).frame(width: 44, height: 44).contentShape(.rect) }
                     .accessibilityLabel("Previous month")
-                Button { step(1) } label: { Image(systemName: "chevron.right").frame(width: 36, height: 36) }
+                Button { step(1) } label: { AppIcon(.forward, size: 20).frame(width: 44, height: 44).contentShape(.rect) }
                     .accessibilityLabel("Next month")
             }
             .buttonStyle(.plain)
@@ -156,30 +167,33 @@ private struct DayCell: View {
     let hasPlanned: Bool
 
     private var isToday: Bool { Calendar.current.isDateInToday(day) }
+    private var isPast: Bool { day < Calendar.current.startOfDay(for: .now) }
 
     var body: some View {
         VStack(spacing: 3) {
             Text(day.formatted(.dateTime.day()))
-                .font(.subheadline.weight(isToday || isSelected ? .bold : .regular))
-                .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(isToday ? Color.accentColor : .primary))
+                .font(.subheadline.weight(isToday || isSelected ? .bold : .medium))
+                .foregroundStyle(isToday ? Palette.onAccent : (isPast ? Palette.mutedNumber : Palette.text))
                 .frame(width: 34, height: 34)
                 .background {
-                    if isSelected {
-                        Circle().fill(Color.accentColor)
-                    } else if isToday {
-                        Circle().strokeBorder(Color.accentColor, lineWidth: 1.5)
+                    if isToday { Circle().fill(Palette.accent) }
+                }
+                .overlay {
+                    // The selected day (when it isn't today) gets an accent ring.
+                    if isSelected, !isToday {
+                        Circle().strokeBorder(Palette.accent, lineWidth: 2)
                     }
                 }
 
             HStack(spacing: 3) {
                 ForEach(due.prefix(3)) { assignment in
                     Circle()
-                        .fill(assignment.tint.opacity(assignment.isCompleted ? 0.35 : 1))
+                        .fill(assignment.tint.opacity(assignment.isCompleted ? 0.4 : 1))
                         .frame(width: 5, height: 5)
                 }
                 if hasPlanned {
                     Circle()
-                        .strokeBorder(Color.accentColor, lineWidth: 1.2)
+                        .strokeBorder(Palette.accent, lineWidth: 1.2)
                         .frame(width: 6, height: 6)
                 }
             }
@@ -206,6 +220,7 @@ private struct DayCell: View {
 
 // MARK: - Day agenda
 
+/// The selected day's items in one glass panel: what's due, then planned work sessions.
 private struct DayAgenda: View {
     let day: Date
     let assignments: [Assignment]
@@ -217,30 +232,42 @@ private struct DayAgenda: View {
     }
 
     private var planned: [Assignment] {
-        assignments.filter { !$0.isCompleted && $0.plannedDate.map { calendar.isDate($0, inSameDayAs: day) } == true }
+        assignments.filter {
+            !$0.isCompleted && $0.plannedDate.map { calendar.isDate($0, inSameDayAs: day) } == true
+                && !calendar.isDate($0.dueDate, inSameDayAs: day)
+        }
+    }
+
+    private var title: String {
+        calendar.isDateInToday(day) ? "Today" : day.formatted(.dateTime.weekday(.wide).month(.wide).day())
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(day.dueDayLabel() == "Today" ? "Today" : day.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                .font(.title3.weight(.semibold))
-                .padding(.leading, 4)
+            HStack(alignment: .firstTextBaseline) {
+                SectionHeader(title)
+                Spacer()
+                let open = due.filter { !$0.isCompleted }.count
+                if !due.isEmpty {
+                    Text(open == 0 ? "All done" : "\(open) left")
+                        .font(.subheadline)
+                        .foregroundStyle(Palette.secondaryText)
+                        .padding(.trailing, 4)
+                }
+            }
 
             if due.isEmpty && planned.isEmpty {
                 Text("Nothing due or planned. A good day to get ahead.")
                     .font(.subheadline)
                     .foregroundStyle(Palette.secondaryText)
+                    .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
-                    .glassCard()
-            }
-            if !due.isEmpty {
-                SectionHeader("Due")
-                ForEach(due) { AssignmentRow(assignment: $0) }
-            }
-            if !planned.isEmpty {
-                SectionHeader("Planned to work on")
-                ForEach(planned) { AssignmentRow(assignment: $0) }
+                    .padding(.horizontal, 16)
+                    .glassCard(cornerRadius: 26)
+            } else {
+                let planned = Set(planned.map(\.id))
+                AssignmentGroup(assignments: due + self.planned) { planned.contains($0.id) ? "Planned" : nil }
             }
         }
     }

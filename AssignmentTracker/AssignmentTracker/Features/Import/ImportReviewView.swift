@@ -73,7 +73,7 @@ struct ImportReviewView: View {
                                 CandidateRow(
                                     candidate: candidate,
                                     courseName: model.course?.name,
-                                    tint: model.course?.color ?? .accentColor,
+                                    tint: model.course?.color ?? Palette.accent,
                                     onToggle: { model.toggleIncluded(candidate.id) },
                                     onOpen: { editing = candidate.id }
                                 )
@@ -91,19 +91,24 @@ struct ImportReviewView: View {
                 Button {
                     editing = model.addCandidate()
                 } label: {
-                    Label("Add Item", systemImage: "plus")
-                        .font(.body.weight(.medium))
-                        .frame(maxWidth: .infinity, minHeight: 30)
+                    HStack(spacing: 8) {
+                        AppIcon(.add, size: 20)
+                        Text("Add Item")
+                    }
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Palette.accentText)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .contentShape(.capsule)
                 }
-                .buttonStyle(.glass)
-                .controlSize(.large)
+                .buttonStyle(.plain)
+                .duskGlass(in: Capsule(), interactive: true)
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 24)
             .animation(.snappy, value: model.candidates)
         }
-        .background { AmbientBackground(variant: .detail).opacity(0.6) }
+        .background { DuskBackground() }
         .task { notificationsBlocked = await ReminderScheduler.isDenied() }
         .navigationTitle("Review")
         .navigationBarTitleDisplayMode(.inline)
@@ -115,11 +120,14 @@ struct ImportReviewView: View {
                 } label: {
                     Text(saveTitle)
                         .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .foregroundStyle(Color.white)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .contentShape(.capsule)
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
+                .buttonStyle(.plain)
+                .accentFill(in: Capsule())
                 .disabled(model.includedCount == 0)
+                .opacity(model.includedCount == 0 ? 0.5 : 1)
                 if let saveFootnote {
                     Text(saveFootnote)
                         .font(.caption)
@@ -160,9 +168,8 @@ struct ImportReviewView: View {
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "doc.text")
-                    .font(.title3)
-                    .foregroundStyle(Color.accentColor)
+                AppIcon(.notes, size: 22)
+                    .foregroundStyle(Palette.accent)
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.sourceName)
@@ -183,7 +190,7 @@ struct ImportReviewView: View {
                 Label {
                     Text("You’ve imported this syllabus into \(model.course?.name ?? "this class") before. Items already in the class are unchecked.")
                 } icon: {
-                    Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Palette.warning)
+                    AppIcon(.info, size: 18).foregroundStyle(Palette.warning)
                 }
                 .font(.footnote)
                 .padding(.vertical, 12)
@@ -194,9 +201,9 @@ struct ImportReviewView: View {
 
             Divider()
             Toggle(isOn: $model.remindDayBefore) {
-                RowLabel("Remind me a day before", systemImage: "bell")
+                RowLabel("Remind me a day before", icon: .reminder)
             }
-            .tint(Palette.success)
+            .tint(Palette.onTimeGreen)
             .frame(minHeight: 52)
             if model.remindDayBefore && notificationsBlocked {
                 Text("Notifications are off for this app, so reminders won’t appear. Turn them on in Settings.")
@@ -223,6 +230,7 @@ struct ImportReviewView: View {
     private var engineRow: some View {
         switch model.engine {
         case .onDeviceModel:
+            // No Apple Intelligence glyph in the app's icon set; SF Symbol fallback.
             Label("Found with Apple Intelligence, on this iPhone", systemImage: "apple.intelligence")
                 .font(.footnote)
         case .rules(let reason):
@@ -235,7 +243,7 @@ struct ImportReviewView: View {
                     }
                 }
             } icon: {
-                Image(systemName: "text.magnifyingglass")
+                AppIcon(.search, size: 18)
             }
             .font(.footnote)
         }
@@ -246,7 +254,7 @@ struct ImportReviewView: View {
         if let termStart = model.termStart {
             DatePicker(selection: Binding(get: { termStart }, set: { model.termStart = $0 }), displayedComponents: .date) {
                 VStack(alignment: .leading, spacing: 2) {
-                    RowLabel("Classes start", systemImage: "calendar")
+                    RowLabel("Classes start", icon: .calendar)
                     Text("Places dates like “Week 3, Friday”")
                         .font(.caption)
                         .foregroundStyle(Palette.secondaryText)
@@ -260,7 +268,7 @@ struct ImportReviewView: View {
             } label: {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        RowLabel("Set when classes start", systemImage: "calendar.badge.plus")
+                        RowLabel("Set when classes start", icon: .plan)
                         Text(model.usesRelativeWeeks
                              ? "Needed for dates like “Week 3, Friday”"
                              : "The syllabus doesn’t say")
@@ -288,7 +296,7 @@ private struct CandidateRow: View {
     var body: some View {
         HStack(spacing: 6) {
             Button(action: candidate.dueDate == nil ? onOpen : onToggle) {
-                CheckCircle(isOn: candidate.isIncluded, tint: candidate.dueDate == nil ? Palette.openStep : tint)
+                CheckCircle(isOn: candidate.isIncluded, tint: candidate.dueDate == nil ? Palette.mutedNumber : tint)
                     .frame(width: 44, height: 44)
                     .contentShape(.rect)
             }
@@ -300,11 +308,11 @@ private struct CandidateRow: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(candidate.title.isEmpty ? "Untitled" : candidate.title)
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(candidate.isIncluded ? .primary : Palette.completedText)
+                            .foregroundStyle(candidate.isIncluded ? Palette.text : Palette.completedText)
                             .multilineTextAlignment(.leading)
 
                         HStack(spacing: 6) {
-                            Image(systemName: candidate.kind.systemImage)
+                            AppIcon(candidate.kind.icon, size: 14)
                             Text(dateLabel)
                             if let weight = candidate.weight {
                                 Text("·")
@@ -315,6 +323,7 @@ private struct CandidateRow: View {
                         .foregroundStyle(Palette.secondaryText)
 
                         if let note = attentionNote {
+                            // No duplicate or warning glyph in the app's icon set; SF Symbol fallbacks.
                             Label(note, systemImage: candidate.duplicateOf != nil ? "doc.on.doc" : "exclamationmark.triangle")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(candidate.duplicateOf != nil ? Palette.secondaryText : Palette.warning)
@@ -323,9 +332,8 @@ private struct CandidateRow: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Palette.chevron)
+                    AppIcon(.forward, size: 16)
+                        .foregroundStyle(Palette.mutedNumber)
                 }
                 .padding(.vertical, 10)
                 .contentShape(.rect)

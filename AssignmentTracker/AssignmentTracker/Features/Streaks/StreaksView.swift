@@ -11,7 +11,7 @@ struct StreaksView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     ScreenHeader(subtitle: "Best streak: \(stats.bestStreak)", title: "Streaks") {
-                        GlassCircleButton(systemImage: "info.circle", label: "How streaks work") {
+                        GlassCircleButton(icon: .info, label: "How streaks work") {
                             isShowingInfo = true
                         }
                     }
@@ -25,7 +25,8 @@ struct StreaksView: View {
                 .padding(.bottom, 24)
             }
             .scrollEdgeEffectStyle(.soft, for: .top)
-            .background { AmbientBackground(variant: .streaks) }
+            .clearsTabBar()
+            .background { DuskBackground() }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingInfo) { StreakInfoSheet() }
         }
@@ -49,7 +50,7 @@ private struct StreakCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 16) {
-                TintTile(content: .symbol("flame.fill"), color: Palette.streakOrange, size: 60, cornerRadius: 20)
+                TintTile(content: .icon(.streaks), color: Palette.streakOrange, size: 60, cornerRadius: 20)
                     .symbolEffect(.bounce, value: stats.currentStreak)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -67,7 +68,7 @@ private struct StreakCard: View {
             }
             .accessibilityElement(children: .combine)
 
-            Rectangle().fill(Palette.divider).frame(height: 1)
+            Rectangle().fill(Palette.hairline).frame(height: 1)
 
             HStack(alignment: .top, spacing: 12) {
                 Stat(
@@ -160,11 +161,10 @@ private struct DayColumn: View {
         switch day.kind {
         case .onTime:
             Circle()
-                .fill(Palette.streakGreen)
+                .fill(Palette.onTimeGreen)
                 .overlay {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Palette.onFill)
+                    AppIcon(.check, size: 14, weight: 3)
+                        .foregroundStyle(Palette.onAccent)
                 }
         case .empty:
             Circle().fill(Palette.faintFill)
@@ -228,7 +228,7 @@ struct BadgeRow: View {
     var body: some View {
         HStack(alignment: badge.isUnlocked ? .center : .top, spacing: 14) {
             TintTile(
-                content: .symbol(badge.isUnlocked ? badge.systemImage : "lock.fill"),
+                content: .icon(badge.isUnlocked ? badge.icon : .locked),
                 color: badge.isUnlocked ? Palette.streakOrange : Palette.completedText
             )
             if badge.isUnlocked {

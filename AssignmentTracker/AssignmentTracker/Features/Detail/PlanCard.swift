@@ -13,8 +13,7 @@ struct PlanCard: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: assignment.plannedDate == nil ? "calendar.badge.plus" : "calendar.badge.clock")
-                .font(.title3)
+            AppIcon(.plan, size: 22)
                 .foregroundStyle(Palette.accentText)
                 .frame(width: 26)
                 .accessibilityHidden(true)
@@ -38,10 +37,11 @@ struct PlanCard: View {
                 Button {
                     assignment.plan(for: nil)
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(Palette.chevron)
-                        .frame(width: 32, height: 44)
+                    AppIcon(.close, size: 12, weight: 2.5)
+                        .foregroundStyle(Palette.secondaryText)
+                        .frame(width: 24, height: 24)
+                        .background(Palette.faintFill, in: .circle)
+                        .frame(width: 36, height: 44)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -59,9 +59,8 @@ struct PlanCard: View {
                                 .foregroundStyle(Palette.secondaryText)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(Palette.chevron)
+                        AppIcon(.forward, size: 16)
+                            .foregroundStyle(Palette.mutedNumber)
                     }
                     .contentShape(.rect)
                 }

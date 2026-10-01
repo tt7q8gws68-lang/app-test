@@ -60,7 +60,7 @@ struct SyllabusImportSheet: View {
                 .padding(.bottom, 24)
                 .animation(.snappy, value: model.error)
             }
-            .background { AmbientBackground(variant: .list).opacity(0.6) }
+            .background { DuskBackground() }
             .overlay {
                 if case .working(let message) = model.phase {
                     WorkingOverlay(message: message)
@@ -71,7 +71,7 @@ struct SyllabusImportSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", systemImage: "xmark", role: .cancel) { dismiss() }
+                    Button(role: .cancel) { dismiss() } label: { Label("Cancel", appIcon: .close) }
                 }
             }
             .navigationDestination(isPresented: Binding(
@@ -116,15 +116,16 @@ struct SyllabusImportSheet: View {
 
     private var sourceCard: some View {
         VStack(spacing: 0) {
-            SourceRow(title: "Choose File", systemImage: "doc") { isPickingFile = true }
+            SourceRow(title: "Choose File", icon: .notes) { isPickingFile = true }
             Divider()
             PhotosPicker(selection: $photoSelection, maxSelectionCount: 10, matching: .images) {
-                SourceRowLabel(title: "Photo Library", systemImage: "photo.on.rectangle")
+                // No photo glyph in the app's icon set; SF Symbol fallback.
+                SourceRowLabel(title: "Photo Library", fallbackSymbol: "photo.on.rectangle")
             }
             .buttonStyle(.plain)
             if VNDocumentCameraViewController.isSupported {
                 Divider()
-                SourceRow(title: "Scan Document", systemImage: "doc.viewfinder") { isScanning = true }
+                SourceRow(title: "Scan Document", icon: .scan) { isScanning = true }
             }
         }
         .padding(.horizontal, 16)
@@ -137,12 +138,12 @@ struct SyllabusImportSheet: View {
 
 private struct SourceRow: View {
     let title: String
-    let systemImage: String
+    let icon: AppIcon.Name
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            SourceRowLabel(title: title, systemImage: systemImage)
+            SourceRowLabel(title: title, icon: icon)
         }
         .buttonStyle(.plain)
     }
@@ -150,15 +151,19 @@ private struct SourceRow: View {
 
 private struct SourceRowLabel: View {
     let title: String
-    let systemImage: String
+    var icon: AppIcon.Name?
+    var fallbackSymbol: String?
 
     var body: some View {
         HStack {
-            RowLabel(title, systemImage: systemImage)
+            if let icon {
+                RowLabel(title, icon: icon)
+            } else {
+                RowLabel.SymbolFallback(title: title, systemImage: fallbackSymbol ?? "")
+            }
             Spacer()
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Palette.chevron)
+            AppIcon(.forward, size: 16)
+                .foregroundStyle(Palette.mutedNumber)
         }
         .frame(minHeight: 52)
         .contentShape(.rect)
@@ -170,9 +175,8 @@ private struct ErrorCard: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
+            AppIcon(.info, size: 24)
                 .foregroundStyle(Palette.danger)
-                .font(.title3)
             VStack(alignment: .leading, spacing: 4) {
                 Text(error.errorDescription ?? "Something went wrong.")
                     .font(.subheadline.weight(.semibold))

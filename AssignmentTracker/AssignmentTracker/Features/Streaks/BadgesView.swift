@@ -25,9 +25,11 @@ struct BadgesView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .background { AmbientBackground(variant: .streaks) }
+        .background { DuskBackground() }
         .navigationTitle("Badges")
         .navigationBarTitleDisplayMode(.large)
         .toolbarVisibility(.visible, for: .navigationBar)
+        .hidesTabBar()
+        .duskBackButton()
     }
 }

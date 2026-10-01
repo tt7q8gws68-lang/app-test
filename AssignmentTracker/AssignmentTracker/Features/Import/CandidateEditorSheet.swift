@@ -42,12 +42,12 @@ struct CandidateEditorSheet: View {
 
                     VStack(spacing: 0) {
                         HStack {
-                            RowLabel("Type", systemImage: draft.kind.systemImage)
+                            RowLabel("Type", icon: draft.kind.icon)
                             Spacer()
                             // Outside a Form a menu picker shows only its button, so label it here.
                             Picker("Type", selection: $draft.kind) {
                                 ForEach(AssignmentKind.allCases) { kind in
-                                    Label(kind.label, systemImage: kind.systemImage).tag(kind)
+                                    Label(kind.label, appIcon: kind.icon).tag(kind)
                                 }
                             }
                             .pickerStyle(.menu)
@@ -57,27 +57,27 @@ struct CandidateEditorSheet: View {
 
                         Divider()
                         Toggle(isOn: $hasDate.animation(.snappy)) {
-                            RowLabel("Due date", systemImage: "calendar")
+                            RowLabel("Due date", icon: .calendar)
                         }
-                        .tint(Palette.success)
+                        .tint(Palette.onTimeGreen)
                         .frame(minHeight: 52)
 
                         if hasDate {
                             Divider()
                             DatePicker(selection: $date, displayedComponents: .date) {
-                                RowLabel("Day", systemImage: "calendar.day.timeline.left")
+                                RowLabel("Day", icon: .calendar)
                             }
                             .frame(minHeight: 52)
                             Divider()
                             DatePicker(selection: $date, displayedComponents: .hourAndMinute) {
-                                RowLabel("Time", systemImage: "clock")
+                                RowLabel("Time", icon: .clock)
                             }
                             .frame(minHeight: 52)
                         }
 
                         Divider()
                         HStack {
-                            RowLabel("Weight", systemImage: "percent")
+                            RowLabel("Weight", icon: .badge)
                             TextField("e.g. 15%", text: Binding(
                                 get: { draft.weight ?? "" },
                                 set: { draft.weight = $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
@@ -106,12 +106,15 @@ struct CandidateEditorSheet: View {
                         onDelete()
                         dismiss()
                     } label: {
+                        // No delete glyph in the app's icon set; SF Symbol fallback.
                         Label("Remove from Import", systemImage: "trash")
-                            .frame(maxWidth: .infinity, minHeight: 30)
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Palette.danger)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .contentShape(.capsule)
                     }
-                    .buttonStyle(.glass)
-                    .controlSize(.large)
-                    .tint(Palette.danger)
+                    .buttonStyle(.plain)
+                    .duskGlass(in: Capsule(), interactive: true)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -122,14 +125,16 @@ struct CandidateEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", systemImage: "xmark", role: .cancel) {
+                    Button(role: .cancel) {
                         // A brand-new, untouched item is discarded rather than left blank.
                         if original.title.isEmpty, draft.title.trimmingCharacters(in: .whitespaces).isEmpty { onDelete() }
                         dismiss()
+                    } label: {
+                        Label("Cancel", appIcon: .close)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", systemImage: "checkmark", role: .confirm, action: save)
+                    Button(role: .confirm, action: save) { Label("Done", appIcon: .check) }
                         .disabled(draft.title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -146,7 +151,7 @@ struct CandidateEditorSheet: View {
                     .font(.subheadline)
             }
             if let reason = original.reviewReason {
-                Label(reason, systemImage: "exclamationmark.triangle")
+                Label { Text(reason) } icon: { AppIcon(.info, size: 16) }
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(Palette.warning)
             }

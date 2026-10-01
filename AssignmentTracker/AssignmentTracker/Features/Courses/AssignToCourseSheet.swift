@@ -32,12 +32,12 @@ struct AssignToCourseSheet: View {
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
-            .background { AmbientBackground(variant: .courses).opacity(0.6) }
+            .background { DuskBackground() }
             .navigationTitle("Assign Courses")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", systemImage: "checkmark", role: .confirm) { dismiss() }
+                    Button(role: .confirm) { dismiss() } label: { Label("Done", appIcon: .check) }
                 }
             }
         }

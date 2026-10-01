@@ -5,10 +5,14 @@ enum AppTab: Hashable {
     case assignments, calendar, courses, streaks
 }
 
-/// The tab bar from the mockups, plus app-wide celebrations when a streak or day is completed.
+/// The four tabs under a floating Dusk tab bar, plus app-wide celebrations when a streak or day
+/// is completed.
 struct RootView: View {
     @Query private var assignments: [Assignment]
     @State private var tab: AppTab = .assignments
+    @State private var tabBarVisibility = TabBarVisibility()
+    /// The day shown in Calendar; the Assignments week strip sets it.
+    @State private var calendarDay = Calendar.current.startOfDay(for: .now)
     @State private var celebration: Celebration?
     @State private var lastStats: HabitStats?
     @State private var lastStatsDay = Calendar.current.startOfDay(for: .now)
@@ -23,20 +27,39 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            Tab("Assignments", systemImage: "checklist", value: AppTab.assignments) {
-                AssignmentsView(streak: stats.currentStreak) { tab = .streaks }
+            Tab(value: AppTab.assignments) {
+                AssignmentsView { day in
+                    calendarDay = day
+                    withAnimation(.snappy) { tab = .calendar }
+                }
+                .tabContent(barVisible: tabBarVisibility.isVisible)
             }
-            Tab("Calendar", systemImage: "calendar", value: AppTab.calendar) {
-                CalendarView()
+            Tab(value: AppTab.calendar) {
+                CalendarView(selectedDay: $calendarDay)
+                    .tabContent(barVisible: tabBarVisibility.isVisible)
             }
-            Tab("Courses", systemImage: "books.vertical", value: AppTab.courses) {
+            Tab(value: AppTab.courses) {
                 CoursesView()
+                    .tabContent(barVisible: tabBarVisibility.isVisible)
             }
-            Tab("Streaks", systemImage: "flame", value: AppTab.streaks) {
+            Tab(value: AppTab.streaks) {
                 StreaksView(stats: stats)
+                    .tabContent(barVisible: tabBarVisibility.isVisible)
             }
         }
         .id(currentDay)
+        .overlay(alignment: .bottom) {
+            if tabBarVisibility.isVisible {
+                DuskTabBar(selection: $tab)
+                    // 30pt above the screen's bottom edge, which sits inside the bottom safe area.
+                    .padding(.bottom, 30)
+                    // Stays put (behind the keyboard) instead of riding up over the content.
+                    .ignoresSafeArea(.all, edges: .bottom)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .environment(tabBarVisibility)
+        .foregroundStyle(Palette.text)
         .overlay(alignment: .top) {
             if let celebration {
                 CelebrationToast(celebration: celebration)
@@ -73,6 +96,16 @@ struct RootView: View {
     }
 }
 
+private extension View {
+    /// A tab's page: the system tab bar is replaced by `DuskTabBar`. While that bar shows, its
+    /// scroll views add bottom room so the last row ends clear of it (the bar's top is 94pt above
+    /// the screen edge; the home-indicator inset covers 34pt, plus 16pt breathing room).
+    func tabContent(barVisible: Bool) -> some View {
+        toolbarVisibility(.hidden, for: .tabBar)
+            .environment(\.tabBarClearance, barVisible ? 76 : 0)
+    }
+}
+
 extension RootView {
     private func refreshDay() {
         let today = Calendar.current.startOfDay(for: .now)
@@ -90,10 +123,10 @@ struct CelebrationToast: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: celebration.systemImage)
-                .font(.title2)
-                .foregroundStyle(.orange.gradient)
-                .symbolEffect(.bounce, value: bounce)
+            AppIcon(celebration.icon, size: 26)
+                .foregroundStyle(Palette.streakOrange)
+                .scaleEffect(bounce ? 1 : 0.6)
+                .animation(.spring(duration: 0.4, bounce: 0.5), value: bounce)
             VStack(alignment: .leading, spacing: 2) {
                 Text(celebration.title)
                     .font(.subheadline.weight(.semibold))
@@ -104,8 +137,8 @@ struct CelebrationToast: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
-        .glassEffect(.regular, in: .capsule)
-        .onAppear { bounce.toggle() }
+        .duskGlass(in: Capsule())
+        .onAppear { bounce = true }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.updatesFrequently)
     }

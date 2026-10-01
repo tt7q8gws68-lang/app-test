@@ -14,15 +14,18 @@ struct CourseChips: View {
                 }
                 if let onAddCourse {
                     Button(action: onAddCourse) {
-                        Label("New Class", systemImage: "plus")
+                        HStack(spacing: 6) {
+                            AppIcon(.add, size: 16)
+                            Text("New Class")
+                        }
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(Palette.accentText)
                             .padding(.horizontal, 16)
                             .frame(height: 44)
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: .capsule)
+                    .duskGlass(in: Capsule(), interactive: true)
                 }
             }
         }
@@ -50,10 +53,10 @@ struct CourseChips: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .glassEffect(
-            isSelected ? .regular.tint(course.color.opacity(0.18)).interactive() : .regular.interactive(),
-            in: .capsule
-        )
+        .background {
+            if isSelected { Capsule().fill(course.color.opacity(0.14)) }
+        }
+        .duskGlass(in: Capsule(), interactive: true)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

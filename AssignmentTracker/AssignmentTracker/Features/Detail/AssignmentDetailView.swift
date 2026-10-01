@@ -32,7 +32,7 @@ struct AssignmentDetailView: View {
                         Text(assignment.notes)
                             .font(.subheadline)
                             .lineSpacing(3)
-                            .foregroundStyle(.primary.opacity(0.85))
+                            .foregroundStyle(Palette.tertiaryText)
                             .textSelection(.enabled)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -49,18 +49,20 @@ struct AssignmentDetailView: View {
         .contentMargins(.bottom, isAddingStep ? 0 : Self.buttonArea, for: .scrollContent)
         .scrollEdgeEffectStyle(.hard, for: .top)
         .scrollDismissesKeyboard(.interactively)
-        .background { AmbientBackground(variant: .detail) }
+        .background { DuskBackground() }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarVisibility(.hidden, for: .tabBar)
+        .hidesTabBar()
+        .duskBackButton()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    // Edit and delete have no glyph in the app's icon set; SF Symbol fallbacks.
                     Button("Edit", systemImage: "pencil") { isEditing = true }
                     Button("Delete", systemImage: "trash", role: .destructive) {
                         isConfirmingDelete = true
                     }
                 } label: {
-                    Label("More options", systemImage: "ellipsis")
+                    Label("More options", appIcon: .more)
                 }
             }
         }
@@ -111,14 +113,14 @@ struct AssignmentDetailView: View {
                 .accessibilityAddTraits(.isHeader)
 
             FlowLayout(spacing: 8) {
-                Tag(text: dueText, systemImage: "clock", color: isOverdue ? Palette.danger : nil)
+                Tag(text: dueText, icon: .clock, color: isOverdue ? Palette.danger : nil)
                     .accessibilityLabel("Due \(dueText)")
-                Tag(text: "\(assignment.priority.label) priority", systemImage: "flag", color: assignment.priority.color)
+                Tag(text: "\(assignment.priority.label) priority", icon: .priority, color: assignment.priority.color)
                 if let weight = assignment.weight {
-                    Tag(text: weight.hasSuffix("%") ? "\(weight) of grade" : weight, systemImage: "percent", color: nil)
+                    Tag(text: weight.hasSuffix("%") ? "\(weight) of grade" : weight, icon: .badge, color: nil)
                 }
                 if assignment.kind != .assignment {
-                    Tag(text: assignment.kind.label, systemImage: assignment.kind.systemImage, color: nil)
+                    Tag(text: assignment.kind.label, icon: assignment.kind.icon, color: nil)
                 }
             }
             .padding(.top, 4)
@@ -138,24 +140,30 @@ struct AssignmentDetailView: View {
     private var completeButton: some View {
         if assignment.isCompleted {
             Button(action: assignment.toggleCompleted) {
-                Label("Completed · Undo", systemImage: "checkmark")
-                    .font(.headline)
-                    .foregroundStyle(Palette.accentText)
-                    .frame(maxWidth: .infinity, minHeight: 58)
-                    .contentShape(.capsule)
+                HStack(spacing: 10) {
+                    AppIcon(.check, size: 20, weight: 2.4)
+                    Text("Completed · Undo")
+                }
+                .font(.headline)
+                .foregroundStyle(Palette.accentText)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .contentShape(.capsule)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .capsule)
+            .duskGlass(in: Capsule(), interactive: true)
         } else {
             Button(action: assignment.toggleCompleted) {
-                Label("Mark as complete", systemImage: "checkmark")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: 58)
-                    .contentShape(.capsule)
+                HStack(spacing: 10) {
+                    AppIcon(.check, size: 20, weight: 2.4)
+                    Text("Mark as complete")
+                }
+                .font(.headline)
+                .foregroundStyle(Color.white)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .contentShape(.capsule)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.tint(Palette.accentButton).interactive(), in: .capsule)
+            .accentFill(in: Capsule())
         }
     }
 }
@@ -163,23 +171,22 @@ struct AssignmentDetailView: View {
 /// A small glass capsule with an icon, for the due date, priority, weight and type.
 private struct Tag: View {
     let text: String
-    let systemImage: String
-    /// Colors icon and text; nil uses primary text with a secondary icon.
+    let icon: AppIcon.Name
+    /// Colors icon and text; nil uses the text color with a secondary icon.
     let color: Color?
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.footnote.weight(.semibold))
+            AppIcon(icon, size: 16)
                 .foregroundStyle(color ?? Palette.secondaryText)
             Text(text)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color ?? .primary)
+                .foregroundStyle(color ?? Palette.text)
         }
         .padding(.leading, 12)
         .padding(.trailing, 14)
         .frame(minHeight: 36)
-        .glassEffect(.regular, in: .capsule)
+        .duskGlass(in: Capsule())
         .accessibilityElement(children: .combine)
     }
 }
