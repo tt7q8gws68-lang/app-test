@@ -9,6 +9,7 @@ struct ImportReviewView: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var editing: ImportCandidate.ID?
+    @State private var notificationsBlocked = false
 
     private enum Group: CaseIterable {
         case check, ready, noDate, past, duplicate
@@ -103,6 +104,7 @@ struct ImportReviewView: View {
             .animation(.snappy, value: model.candidates)
         }
         .background { AmbientBackground(variant: .detail).opacity(0.6) }
+        .task { notificationsBlocked = await ReminderScheduler.isDenied() }
         .navigationTitle("Review")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
@@ -196,6 +198,12 @@ struct ImportReviewView: View {
             }
             .tint(Palette.success)
             .frame(minHeight: 52)
+            if model.remindDayBefore && notificationsBlocked {
+                Text("Notifications are off for this app, so reminders won’t appear. Turn them on in Settings.")
+                    .font(.footnote)
+                    .foregroundStyle(Palette.warning)
+                    .padding(.bottom, 10)
+            }
         }
         .padding(.horizontal, 16)
         .glassCard()

@@ -86,6 +86,7 @@ struct AssignmentEditorSheet: View {
                     focusedField = .title
                 }
             }
+            .task { notificationsBlocked = await ReminderScheduler.isDenied() }
             .sheet(isPresented: $isAddingCourse) {
                 CourseEditorSheet { course = $0 }
             }

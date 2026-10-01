@@ -50,7 +50,8 @@ final class Assignment {
     }
 
     var tint: Color {
-        course?.color ?? .accentColor
+        // Neutral when there's no class, so it doesn't look like it belongs to a blue one.
+        course?.color ?? CourseColor.graphite.color
     }
 
     var completionRecord: CompletionRecord {

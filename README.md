@@ -6,7 +6,7 @@ Open `AssignmentTracker/AssignmentTracker.xcodeproj` in Xcode 26 or later and ru
 
 ## Features
 
-The app has three tabs: **Assignments**, **Calendar** and **Streaks**.
+The app has four tabs: **Assignments**, **Calendar**, **Courses** and **Streaks**.
 
 - **Assignments:** weekly progress, an All / To do / Done filter, groups (Overdue, Today, This week, Later, Earlier), check-off, and search (pull down). The 🔥 chip shows your streak and opens the Streaks tab. Long-press a row for Plan to Work On.
 - **Detail:** due date, priority and grade weight, type badge, a steps checklist, notes, and mark complete. Edit and Delete are in the ⋯ menu.
@@ -15,6 +15,7 @@ The app has three tabs: **Assignments**, **Calendar** and **Streaks**.
 - **Calendar:**
   - **Month:** a grid with course-colored dots for what's due and a ring for planned work. Tap a day to see what's due and what's planned.
   - **Weeks:** the next 8 weeks, with a load bar for each day and busy weeks (5 or more due, or an exam) flagged.
+- **Courses:** every class with its open work and next due item. Tap one to rename it, pick from 12 colors, or delete it (with or without its assignments). Classes can also be created from the New Assignment sheet or during syllabus import.
 - **Plan to work on:** pick a day to do an assignment (on the detail screen, or long-press a row). It appears on that day in the Calendar.
 - **Streaks:**
   - **On time in a row:** grows when you finish before the due time, and resets on late or overdue work. Work added after it was due, like past syllabus items, doesn't count.

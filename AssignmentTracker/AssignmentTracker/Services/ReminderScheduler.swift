@@ -9,6 +9,11 @@ nonisolated enum ReminderScheduler {
         return (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
+    /// True when the person has turned notifications off for the app (checked without prompting).
+    static func isDenied() async -> Bool {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
+    }
+
     /// Cancels any pending reminder for the assignment and schedules a fresh one if it still applies.
     static func sync(_ assignment: Assignment, calendar: Calendar = .current) {
         let center = UNUserNotificationCenter.current()
