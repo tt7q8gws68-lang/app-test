@@ -1,38 +1,57 @@
 import SwiftUI
 import UIKit
 
-/// Colors taken from the light and dark mockups. Each one resolves per trait collection,
-/// so the whole app follows the system appearance.
+/// The Dusk theme as semantic tokens. Each resolves per trait collection, so the whole app
+/// follows the system appearance. Views use these names, never raw colors.
 enum Palette {
-    static let canvas = Color(light: 0xE9ECF2, dark: 0x0B0D12)
-    static let secondaryText = Color(light: 0x4E5460, dark: 0xA3A9B5)
-    static let completedText = Color(light: 0x6B717C, dark: 0x7C828E)
-    static let chevron = Color(light: 0x8A909B, dark: 0x6E7480)
-    static let openStep = Color(light: 0x9AA0AA, dark: 0x6E7480)
-    static let track = Color(light: 0x14161C, dark: 0xFFFFFF, lightAlpha: 0.08, darkAlpha: 0.12)
-    /// Checkmark drawn on top of a filled course-colored circle.
-    static let onFill = Color(light: 0xFFFFFF, dark: 0x0B0D12)
-    static let danger = Color(light: 0xB3261E, dark: 0xFF8A80)
-    static let warning = Color(light: 0xA15C00, dark: 0xFFB35C)
-    static let success = Color(light: 0x1F9D55, dark: 0x30D158)
+    // MARK: Surfaces and text
+    static let background = Color(light: 0xECEAF6, dark: 0x0D0B1A)
+    static let text = Color(light: 0x17142B, dark: 0xF4F2FB)
+    static let secondaryText = Color(light: 0x57527A, dark: 0xABA6C8)
+    static let tertiaryText = Color(light: 0x433E63, dark: 0xC0BBDB)
+    static let completedText = Color(light: 0x767190, dark: 0x8A85A8)
+    /// Past day numbers, chevrons and open step rings.
+    static let mutedNumber = Color(light: 0x9A95B5, dark: 0x6F6A8C)
+    static let hairline = Color(light: 0x17142B, dark: 0xFFFFFF, lightAlpha: 0.08, darkAlpha: 0.10)
+    static let track = Color(light: 0x17142B, dark: 0xFFFFFF, lightAlpha: 0.10, darkAlpha: 0.12)
+    /// Faint fill for empty day circles and neutral chips.
+    static let faintFill = Color(light: 0x17142B, dark: 0xFFFFFF, lightAlpha: 0.06, darkAlpha: 0.08)
+    static let dashedOutline = Color(light: 0x17142B, dark: 0xFFFFFF, lightAlpha: 0.18, darkAlpha: 0.22)
 
-    /// Accent-colored text (links, the course name on the detail screen).
-    static let accentText = Color(light: 0x0A5BD6, dark: 0x8DB8FF)
-    /// Fill behind white text on solid accent buttons; darker than the dark-mode accent so
-    /// white text keeps its contrast.
-    static let accentButton = Color(light: 0x0A62E0, dark: 0x2F6EF0)
+    // MARK: Accent
+    static let accent = Color(light: 0x5B4BEA, dark: 0x8C7DFF)
+    static let accentText = Color(light: 0x4A3BD6, dark: 0xA89BFF)
+    /// End of the progress ring gradient.
+    static let ringEnd = Color(light: 0xD6477A, dark: 0xFF7FA6)
+    /// Solid accent buttons (+, Mark as complete). A touch deeper than the accent in dark mode,
+    /// as in the dark mockup, so white text and icons on it keep their contrast.
+    static let accentFill = Color(light: 0x5B4BEA, dark: 0x7C6CFF)
+    /// Marks drawn on top of an accent or course-colored fill.
+    static let onAccent = Color(light: 0xFFFFFF, dark: 0x0D0B1A)
+
+    // MARK: Glass
+    static let glassTint = Color(light: 0xFFFFFF, dark: 0xD6CDFF, lightAlpha: 0.42, darkAlpha: 0.085)
+    static let glassBorder = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.70, darkAlpha: 0.13)
+    static let glassShadow = Color(light: 0x3C288C, dark: 0x000000, lightAlpha: 0.12, darkAlpha: 0.45)
+    /// The selected tab's frosted pill.
+    static let selectedPill = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.75, darkAlpha: 0.16)
+    /// The selected segment in glass segmented controls (more opaque than the tab pill).
+    static let selectedSegment = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.92, darkAlpha: 0.16)
+    /// Behind the floating tab bar, so content scrolling under it reads as blurred rather than
+    /// showing through the glass.
+    static let barBacking = Color(light: 0xF4F2FB, dark: 0x0D0B1A, lightAlpha: 0.35, darkAlpha: 0.62)
+
+    // MARK: Status (unchanged from earlier themes)
     static let streakOrange = Color(light: 0xE8700F, dark: 0xFF9A5C)
-    /// Finished-on-time marker in the streak week strip.
-    static let streakGreen = Color(light: 0x1F9D55, dark: 0x34C77B)
-    /// Faint fill for empty day circles and unearned tiles.
-    static let faintFill = Color(light: 0x14161C, dark: 0xFFFFFF, lightAlpha: 0.06, darkAlpha: 0.08)
-    static let dashedOutline = Color(light: 0x14161C, dark: 0xFFFFFF, lightAlpha: 0.16, darkAlpha: 0.20)
-    static let divider = Color(light: 0x14161C, dark: 0xFFFFFF, lightAlpha: 0.08, darkAlpha: 0.10)
+    static let onTimeGreen = Color(light: 0x1F9D55, dark: 0x34C77B)
+    static let danger = Color(light: 0xB3261E, dark: 0xFF8A80)
+    /// Medium priority and soft warnings.
+    static let warning = Color(light: 0x9A5800, dark: 0xFFB35C)
 
-    static let blobBlue = Color(light: 0x7FB2FF, dark: 0x2F5BFF)
-    static let blobPeach = Color(light: 0xFFB38A, dark: 0xFF6A2B)
-    static let blobMint = Color(light: 0x9EE6D3, dark: 0x14B892)
-    static let blobLilac = Color(light: 0xB9A6FF, dark: 0x7B4DFF)
+    // MARK: Backdrop glows
+    static let glowTopLeft = Color(light: 0x8FA8FF, dark: 0x4B3BFF)
+    static let glowRight = Color(light: 0xD9A8F5, dark: 0xB03DE0)
+    static let glowBottomLeft = Color(light: 0xFFB8CC, dark: 0xFF4D8D)
 }
 
 extension Color {

@@ -16,6 +16,21 @@ enum SampleData {
         insert(into: context)
     }
 
+    private static let duskMigrationKey = "didMigrateDuskCourseColors"
+
+    /// One-time move to the Dusk theme: the sample Econometrics class was orange, and Dusk gives
+    /// it pink. Only touches a class with that name that still has the old color.
+    static func migrateToDuskColors(_ context: ModelContext, defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: duskMigrationKey) else { return }
+        defaults.set(true, forKey: duskMigrationKey)
+        let courses = (try? context.fetch(FetchDescriptor<Course>())) ?? []
+        for course in courses
+        where course.colorToken == .orange
+            && course.name.trimmingCharacters(in: .whitespaces).localizedCaseInsensitiveCompare("Econometrics") == .orderedSame {
+            course.colorToken = .pink
+        }
+    }
+
     static func insert(into context: ModelContext, now: Date = .now, calendar: Calendar = .current) {
         let today = calendar.startOfDay(for: now)
         func due(inDays days: Int, _ hour: Int, _ minute: Int) -> Date {
@@ -24,7 +39,7 @@ enum SampleData {
         }
 
         let finance = Course(name: "Corporate Finance", color: .blue, sortIndex: 0)
-        let econometrics = Course(name: "Econometrics", color: .orange, sortIndex: 1)
+        let econometrics = Course(name: "Econometrics", color: .pink, sortIndex: 1)
         let macro = Course(name: "Macroeconomics", color: .purple, sortIndex: 2)
         let banking = Course(name: "Money & Banking", color: .teal, sortIndex: 3)
         [finance, econometrics, macro, banking].forEach(context.insert)

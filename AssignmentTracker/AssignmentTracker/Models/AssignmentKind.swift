@@ -15,13 +15,13 @@ nonisolated enum AssignmentKind: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    var systemImage: String {
+    var icon: AppIcon.Name {
         switch self {
-        case .assignment: "doc.text"
-        case .exam: "graduationcap"
-        case .quiz: "checklist"
-        case .project: "folder"
-        case .reading: "book"
+        case .assignment: .notes
+        case .exam: .badge
+        case .quiz: .assignments
+        case .project: .plan
+        case .reading: .courses
         }
     }
 }

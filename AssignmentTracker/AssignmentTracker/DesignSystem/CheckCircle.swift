@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Filled circle with a checkmark when on, an outlined ring when off.
+/// A course-colored check: an open 20pt ring (2pt stroke) when off, a filled 24pt circle with
+/// a check when on.
 struct CheckCircle: View {
     var isOn: Bool
     var tint: Color
@@ -10,14 +11,14 @@ struct CheckCircle: View {
             if isOn {
                 Circle()
                     .fill(tint)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Palette.onFill)
+                    .frame(width: 24, height: 24)
+                AppIcon(.check, size: 14, weight: 3)
+                    .foregroundStyle(Palette.onAccent)
                     .transition(.scale.combined(with: .opacity))
             } else {
                 Circle()
                     .strokeBorder(tint, lineWidth: 2)
-                    .padding(1)
+                    .frame(width: 20, height: 20)
             }
         }
         .frame(width: 24, height: 24)
@@ -28,7 +29,7 @@ struct CheckCircle: View {
 #Preview {
     HStack(spacing: 20) {
         CheckCircle(isOn: false, tint: CourseColor.blue.color)
-        CheckCircle(isOn: true, tint: CourseColor.orange.color)
+        CheckCircle(isOn: true, tint: CourseColor.pink.color)
     }
     .padding()
 }

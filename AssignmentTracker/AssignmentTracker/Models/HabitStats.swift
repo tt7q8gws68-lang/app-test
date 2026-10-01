@@ -26,7 +26,7 @@ nonisolated struct Badge: Identifiable, Equatable, Sendable {
     let id: String
     let title: String
     let detail: String
-    let systemImage: String
+    let icon: AppIcon.Name
     /// Progress toward the badge, e.g. best streak 1 of 3. Unlocked when current ≥ goal.
     let current: Int
     let goal: Int
@@ -137,21 +137,21 @@ nonisolated struct HabitStats: Equatable, Sendable {
     var badges: [Badge] {
         [
             Badge(id: "first", title: "Off the Mark", detail: "Finish something on time",
-                  systemImage: "checkmark.seal.fill", current: totalOnTime, goal: 1, tier: 0),
+                  icon: .badge, current: totalOnTime, goal: 1, tier: 0),
             Badge(id: "streak3", title: "Hat Trick", detail: "3 on time in a row",
-                  systemImage: "flame.fill", current: bestStreak, goal: 3, tier: 1),
+                  icon: .streaks, current: bestStreak, goal: 3, tier: 1),
             Badge(id: "streak5", title: "On a Roll", detail: "5 on time in a row",
-                  systemImage: "bolt.fill", current: bestStreak, goal: 5, tier: 3),
+                  icon: .streaks, current: bestStreak, goal: 5, tier: 3),
             Badge(id: "streak10", title: "Ten Straight", detail: "10 on time in a row",
-                  systemImage: "star.fill", current: bestStreak, goal: 10, tier: 5),
+                  icon: .streaks, current: bestStreak, goal: 10, tier: 5),
             Badge(id: "streak25", title: "Unstoppable", detail: "25 on time in a row",
-                  systemImage: "crown.fill", current: bestStreak, goal: 25, tier: 7),
+                  icon: .streaks, current: bestStreak, goal: 25, tier: 7),
             Badge(id: "perfectWeek", title: "Perfect Week", detail: "Everything on time for a week",
-                  systemImage: "calendar.badge.checkmark", current: perfectWeeks, goal: 1, tier: 2),
+                  icon: .calendar, current: perfectWeeks, goal: 1, tier: 2),
             Badge(id: "perfectMonth", title: "Month of Focus", detail: "4 perfect weeks",
-                  systemImage: "trophy.fill", current: perfectWeeks, goal: 4, tier: 6),
+                  icon: .calendar, current: perfectWeeks, goal: 4, tier: 6),
             Badge(id: "early", title: "Early Bird", detail: "Finish 5 things a day early",
-                  systemImage: "sunrise.fill", current: earlyFinishes, goal: 5, tier: 4),
+                  icon: .clock, current: earlyFinishes, goal: 5, tier: 4),
         ]
     }
 
@@ -191,15 +191,15 @@ nonisolated struct HabitStats: Equatable, Sendable {
             badge.isUnlocked && !(old.badges.first { $0.id == badge.id }?.isUnlocked ?? false)
         }
         if let badge = newBadges.first {
-            return Celebration(title: "Badge unlocked: \(badge.title)", detail: badge.detail, systemImage: badge.systemImage)
+            return Celebration(title: "Badge unlocked: \(badge.title)", detail: badge.detail, icon: badge.icon)
         }
         if currentStreak > old.currentStreak, Self.streakMilestones.contains(currentStreak) {
             return Celebration(title: "\(currentStreak) on time in a row!", detail: "Keep the streak going",
-                               systemImage: "flame.fill")
+                               icon: .streaks)
         }
         if allDoneToday, !old.allDoneToday {
             return Celebration(title: "All done for today", detail: currentStreak > 1 ? "Streak: \(currentStreak)" : "Nice work",
-                               systemImage: "checkmark.circle.fill")
+                               icon: .check)
         }
         return nil
     }
@@ -208,5 +208,5 @@ nonisolated struct HabitStats: Equatable, Sendable {
 nonisolated struct Celebration: Equatable, Sendable {
     var title: String
     var detail: String
-    var systemImage: String
+    var icon: AppIcon.Name
 }

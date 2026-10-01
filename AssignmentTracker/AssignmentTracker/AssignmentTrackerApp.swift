@@ -7,6 +7,7 @@ struct AssignmentTrackerApp: App {
         do {
             let container = try ModelContainer(for: ModelContainer.schema)
             SampleData.seedIfNeeded(container.mainContext)
+            SampleData.migrateToDuskColors(container.mainContext)
             return container
         } catch {
             fatalError("Could not open the assignments store: \(error)")

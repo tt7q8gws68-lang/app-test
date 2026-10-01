@@ -1,28 +1,124 @@
 import SwiftUI
 
-/// A 44pt circular icon button. Icon-only, so it always needs an accessibility label.
-/// Drawn with `glassEffect` directly: the system glass button styles add their own padding,
-/// which makes them larger than the 44pt in the designs.
+/// A 44pt circular icon button: Dusk glass, or a solid accent fill for the primary action.
+/// Icon-only, so it always needs an accessibility label.
 struct GlassCircleButton: View {
-    let systemImage: String
+    let icon: AppIcon.Name
     let label: String
     var isProminent = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: isProminent ? .bold : .semibold))
-                .foregroundStyle(isProminent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            AppIcon(icon, size: isProminent ? 22 : 20, weight: isProminent ? 2.2 : nil)
+                .foregroundStyle(isProminent ? Color.white : Palette.text)
                 .frame(width: 44, height: 44)
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .glassEffect(
-            isProminent ? .regular.tint(Palette.accentButton).interactive() : .regular.interactive(),
-            in: .circle
-        )
+        .modifier(CircleSurface(isProminent: isProminent))
         .accessibilityLabel(label)
+    }
+}
+
+private struct CircleSurface: ViewModifier {
+    let isProminent: Bool
+
+    func body(content: Content) -> some View {
+        if isProminent {
+            content.accentFill(in: Circle())
+        } else {
+            content.duskGlass(in: Circle(), interactive: true)
+        }
+    }
+}
+
+/// A glass capsule button with a short text label (e.g. "Today"), at least 44pt tall.
+struct GlassCapsuleButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Palette.text)
+                .padding(.horizontal, 18)
+                .frame(minHeight: 44)
+                .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .duskGlass(in: Capsule(), interactive: true)
+    }
+}
+
+/// A 44pt glass segmented control; the selected segment gets a lighter glass pill.
+struct GlassSegmented<Value: Hashable>: View {
+    let options: [(value: Value, label: String)]
+    @Binding var selection: Value
+    @Namespace private var pill
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(options, id: \.value) { option in
+                let isSelected = option.value == selection
+                Button {
+                    withAnimation(.snappy) { selection = option.value }
+                } label: {
+                    Text(option.label)
+                        .font(.subheadline.weight(isSelected ? .semibold : .medium))
+                        .foregroundStyle(isSelected ? Palette.text : Palette.tertiaryText)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background {
+                            if isSelected {
+                                Capsule()
+                                    .fill(Palette.selectedSegment)
+                                    .shadow(color: Palette.glassShadow, radius: 4, y: 2)
+                                    .matchedGeometryEffect(id: "pill", in: pill)
+                            }
+                        }
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .duskGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+    }
+}
+
+/// A progress ring: a track with an accent-to-pink gradient arc and content in the middle.
+struct ProgressRing<Center: View>: View {
+    let fraction: Double
+    var diameter: CGFloat = 76
+    var lineWidth: CGFloat = 8
+    @ViewBuilder var center: Center
+
+    var body: some View {
+        ZStack {
+            Group {
+                Circle()
+                    .stroke(Palette.track, lineWidth: lineWidth)
+                Circle()
+                    .trim(from: 0, to: min(max(fraction, 0), 1))
+                    .stroke(
+                        AngularGradient(
+                            colors: [Palette.accent, Palette.ringEnd],
+                            center: .center,
+                            startAngle: .degrees(0),
+                            endAngle: .degrees(max(360 * fraction, 1))
+                        ),
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+            }
+            // Inset by half the stroke so the ring's outer edge is exactly `diameter`.
+            .padding(lineWidth / 2)
+            center
+        }
+        .frame(width: diameter, height: diameter)
+        .animation(.snappy, value: fraction)
     }
 }
 
@@ -47,7 +143,7 @@ struct InsetDivider: View {
 
     var body: some View {
         Rectangle()
-            .fill(Palette.divider)
+            .fill(Palette.hairline)
             .frame(height: 1)
             .padding(.leading, leading)
             .padding(.trailing, 12)
@@ -59,7 +155,7 @@ struct InsetDivider: View {
 struct TintTile: View {
     enum Content {
         case text(String)
-        case symbol(String)
+        case icon(AppIcon.Name)
     }
 
     let content: Content
@@ -77,9 +173,8 @@ struct TintTile: View {
                     Text(text)
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(color)
-                case .symbol(let name):
-                    Image(systemName: name)
-                        .font(.system(size: size * 0.46, weight: .semibold))
+                case .icon(let name):
+                    AppIcon(name, size: size * 0.5)
                         .foregroundStyle(color)
                 }
             }
@@ -90,7 +185,7 @@ struct TintTile: View {
 /// A thin capsule progress bar.
 struct ThinProgressBar: View {
     let fraction: Double
-    var tint: Color = .accentColor
+    var tint: Color = Palette.accent
 
     var body: some View {
         Capsule()
