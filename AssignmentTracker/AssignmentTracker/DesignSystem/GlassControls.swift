@@ -52,38 +52,22 @@ struct GlassCapsuleButton: View {
     }
 }
 
-/// A 44pt glass segmented control; the selected segment gets a lighter glass pill.
+/// A segmented control for filters and modes: the system one, so the selection is the real
+/// Liquid Glass thumb that lifts, stretches and can be dragged between segments.
 struct GlassSegmented<Value: Hashable>: View {
     let options: [(value: Value, label: String)]
     @Binding var selection: Value
-    @Namespace private var pill
 
     var body: some View {
-        HStack(spacing: 4) {
+        Picker(selection: $selection.animation(.snappy)) {
             ForEach(options, id: \.value) { option in
-                let isSelected = option.value == selection
-                Button {
-                    withAnimation(.snappy) { selection = option.value }
-                } label: {
-                    Text(option.label)
-                        .font(.subheadline.weight(isSelected ? .semibold : .medium))
-                        .foregroundStyle(isSelected ? Palette.text : Palette.tertiaryText)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .background {
-                            if isSelected {
-                                Capsule()
-                                    .fill(Palette.selectedSegment)
-                                    .matchedGeometryEffect(id: "pill", in: pill)
-                            }
-                        }
-                        .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                Text(option.label).tag(option.value)
             }
+        } label: {
+            EmptyView()
         }
-        .padding(4)
-        .duskGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .pickerStyle(.segmented)
+        .controlSize(.large)
     }
 }
 

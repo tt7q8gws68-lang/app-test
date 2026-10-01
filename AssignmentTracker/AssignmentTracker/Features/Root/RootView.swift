@@ -5,12 +5,11 @@ enum AppTab: Hashable {
     case assignments, calendar, courses, streaks
 }
 
-/// The four tabs under a floating Dusk tab bar, plus app-wide celebrations when a streak or day
-/// is completed.
+/// The four tabs in the system Liquid Glass tab bar (with the app's own icons), plus app-wide
+/// celebrations when a streak or day is completed.
 struct RootView: View {
     @Query private var assignments: [Assignment]
     @State private var tab: AppTab = .assignments
-    @State private var tabBarVisibility = TabBarVisibility()
     /// The day shown in Calendar; the Assignments week strip sets it.
     @State private var calendarDay = Calendar.current.startOfDay(for: .now)
     @State private var calendarFocus = 0
@@ -44,49 +43,18 @@ struct RootView: View {
                     calendarFocus += 1
                     withAnimation(.snappy) { tab = .calendar }
                 }
-                .tabContent(barVisible: tabBarVisibility.isVisible)
-            }
+            } label: { AppTab.assignments.label }
             Tab(value: AppTab.calendar) {
                 CalendarView(selectedDay: $calendarDay, focusRequest: calendarFocus)
-                    .tabContent(barVisible: tabBarVisibility.isVisible)
-            }
+            } label: { AppTab.calendar.label }
             Tab(value: AppTab.courses) {
                 CoursesView()
-                    .tabContent(barVisible: tabBarVisibility.isVisible)
-            }
+            } label: { AppTab.courses.label }
             Tab(value: AppTab.streaks) {
                 StreaksView(stats: stats)
-                    .tabContent(barVisible: tabBarVisibility.isVisible)
-            }
+            } label: { AppTab.streaks.label }
         }
         .id(currentDay)
-        .overlay(alignment: .bottom) {
-            if tabBarVisibility.isVisible {
-                DuskTabBar(selection: $tab)
-                    // The system bar's soft scroll edge: content fades out under the bar, so
-                    // the clear glass shows the glows rather than text running into the labels.
-                    .background(alignment: .bottom) {
-                        LinearGradient(
-                            stops: [
-                                .init(color: Palette.background.opacity(0), location: 0),
-                                .init(color: Palette.background.opacity(0.75), location: 0.55),
-                                .init(color: Palette.background.opacity(0.9), location: 1),
-                            ],
-                            startPoint: .top, endPoint: .bottom
-                        )
-                        .frame(height: 140)
-                        .padding(.bottom, -30)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                    }
-                    // 30pt above the screen's bottom edge, which sits inside the bottom safe area.
-                    .padding(.bottom, 30)
-                    // Stays put (behind the keyboard) instead of riding up over the content.
-                    .ignoresSafeArea(.all, edges: .bottom)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .environment(tabBarVisibility)
         .environment(\.currentTime, now)
         .foregroundStyle(Palette.text)
         .overlay(alignment: .top) {
@@ -126,13 +94,28 @@ extension EnvironmentValues {
     @Entry var currentTime: Date = .now
 }
 
-private extension View {
-    /// A tab's page: the system tab bar is replaced by `DuskTabBar`. While that bar shows, its
-    /// scroll views add bottom room so the last row ends clear of it (the bar's top is 94pt above
-    /// the screen edge; the home-indicator inset covers 34pt, plus 16pt breathing room).
-    func tabContent(barVisible: Bool) -> some View {
-        toolbarVisibility(.hidden, for: .tabBar)
-            .environment(\.tabBarClearance, barVisible ? 76 : 0)
+extension AppTab {
+    var title: String {
+        switch self {
+        case .assignments: "Assignments"
+        case .calendar: "Calendar"
+        case .courses: "Courses"
+        case .streaks: "Streaks"
+        }
+    }
+
+    var icon: AppIcon.Name {
+        switch self {
+        case .assignments: .assignments
+        case .calendar: .calendar
+        case .courses: .courses
+        case .streaks: .streaks
+        }
+    }
+
+    /// The tab bar item: the outline icon as a template image, tinted by the system bar.
+    var label: Label<Text, Image> {
+        Label(title, appIcon: icon)
     }
 }
 

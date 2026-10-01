@@ -91,7 +91,6 @@ struct AssignmentsView: View {
             .scrollIndicators(.hidden)
             .scrollEdgeEffectStyle(.soft, for: .top)
             .scrollDismissesKeyboard(.interactively)
-            .clearsTabBar()
             .background { DuskBackground() }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: Assignment.self) { assignment in

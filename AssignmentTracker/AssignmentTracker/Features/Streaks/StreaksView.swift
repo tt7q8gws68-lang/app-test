@@ -25,7 +25,6 @@ struct StreaksView: View {
                 .padding(.bottom, 24)
             }
             .scrollEdgeEffectStyle(.soft, for: .top)
-            .clearsTabBar()
             .background { DuskBackground() }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingInfo) { StreakInfoSheet() }

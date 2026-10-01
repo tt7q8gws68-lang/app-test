@@ -20,7 +20,7 @@ The app has four tabs: **Assignments**, **Calendar**, **Courses** and **Streaks*
   - A Monday–Sunday strip with a course-colored dot per item due; tap a day to open it in Calendar.
   - An All / To do / Done filter and a search button.
   - Groups (Overdue, Today, This week, Later, Earlier), each one glass panel with "N left". Long-press a row to plan a day to work on it.
-- **Tab bar:** floating glass, hidden on pushed screens.
+- **Tab bar:** the system Liquid Glass tab bar with the app's outline icons, hidden on pushed screens. Filters use the system segmented control, so both selections are the real draggable glass thumb.
 - **Detail:** due date, priority and grade weight, type badge, a steps checklist, notes, and mark complete. Edit and Delete are in the ⋯ menu.
 - **New / Edit sheet:** title, course, due date and time, a reminder the day before (a local notification), priority, and notes.
 - **Syllabus import:** tap the document button at the top right of the Assignments list.

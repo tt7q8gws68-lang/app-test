@@ -29,12 +29,6 @@ enum Palette {
     /// Marks drawn on top of an accent or course-colored fill.
     static let onAccent = Color(light: 0xFFFFFF, dark: 0x0D0B1A)
 
-    // MARK: Glass
-    /// The selected tab's frosted pill.
-    static let selectedPill = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.75, darkAlpha: 0.16)
-    /// The selected segment in glass segmented controls (more opaque than the tab pill).
-    static let selectedSegment = Color(light: 0xFFFFFF, dark: 0xFFFFFF, lightAlpha: 0.92, darkAlpha: 0.16)
-
     // MARK: Status (unchanged from earlier themes)
     static let streakOrange = Color(light: 0xE8700F, dark: 0xFF9A5C)
     static let onTimeGreen = Color(light: 0x1F9D55, dark: 0x34C77B)

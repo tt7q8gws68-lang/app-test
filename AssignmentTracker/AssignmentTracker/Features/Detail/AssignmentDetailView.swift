@@ -52,7 +52,7 @@ struct AssignmentDetailView: View {
         .scrollDismissesKeyboard(.interactively)
         .background { DuskBackground() }
         .navigationBarTitleDisplayMode(.inline)
-        .hidesTabBar()
+        .toolbarVisibility(.hidden, for: .tabBar)
         .duskBackButton()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

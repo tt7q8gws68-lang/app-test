@@ -65,7 +65,6 @@ struct CoursesView: View {
                 .padding(.bottom, 24)
             }
             .scrollEdgeEffectStyle(.soft, for: .top)
-            .clearsTabBar()
             .background { DuskBackground() }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .sheet(item: $editing) { CourseEditorSheet(course: $0) }
