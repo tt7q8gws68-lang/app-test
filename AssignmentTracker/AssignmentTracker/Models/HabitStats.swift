@@ -27,7 +27,30 @@ nonisolated struct Badge: Identifiable, Equatable, Sendable {
     let title: String
     let detail: String
     let systemImage: String
-    let isUnlocked: Bool
+    /// Progress toward the badge, e.g. best streak 1 of 3. Unlocked when current ≥ goal.
+    let current: Int
+    let goal: Int
+    /// Difficulty rank: the highest-tier unlocked badge stands in for the most recent one,
+    /// since badges are worked out from history rather than stored with a date.
+    let tier: Int
+
+    var isUnlocked: Bool { current >= goal }
+    var fraction: Double { goal == 0 ? 1 : min(Double(current) / Double(goal), 1) }
+}
+
+/// One day in the streak screen's Monday-to-Sunday strip.
+nonisolated struct WeekDayStatus: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        /// Something was finished on time that day.
+        case onTime
+        /// A past day (or today so far) with nothing finished on time.
+        case empty
+        case future
+    }
+
+    var date: Date
+    var kind: Kind
+    var isToday: Bool
 }
 
 /// On-time streaks, perfect weeks and activity, worked out from completion history.
@@ -114,22 +137,52 @@ nonisolated struct HabitStats: Equatable, Sendable {
     var badges: [Badge] {
         [
             Badge(id: "first", title: "Off the Mark", detail: "Finish something on time",
-                  systemImage: "checkmark.seal.fill", isUnlocked: totalOnTime >= 1),
+                  systemImage: "checkmark.seal.fill", current: totalOnTime, goal: 1, tier: 0),
             Badge(id: "streak3", title: "Hat Trick", detail: "3 on time in a row",
-                  systemImage: "flame.fill", isUnlocked: bestStreak >= 3),
+                  systemImage: "flame.fill", current: bestStreak, goal: 3, tier: 1),
             Badge(id: "streak5", title: "On a Roll", detail: "5 on time in a row",
-                  systemImage: "bolt.fill", isUnlocked: bestStreak >= 5),
+                  systemImage: "bolt.fill", current: bestStreak, goal: 5, tier: 3),
             Badge(id: "streak10", title: "Ten Straight", detail: "10 on time in a row",
-                  systemImage: "star.fill", isUnlocked: bestStreak >= 10),
+                  systemImage: "star.fill", current: bestStreak, goal: 10, tier: 5),
             Badge(id: "streak25", title: "Unstoppable", detail: "25 on time in a row",
-                  systemImage: "crown.fill", isUnlocked: bestStreak >= 25),
+                  systemImage: "crown.fill", current: bestStreak, goal: 25, tier: 7),
             Badge(id: "perfectWeek", title: "Perfect Week", detail: "Everything on time for a week",
-                  systemImage: "calendar.badge.checkmark", isUnlocked: perfectWeeks >= 1),
+                  systemImage: "calendar.badge.checkmark", current: perfectWeeks, goal: 1, tier: 2),
             Badge(id: "perfectMonth", title: "Month of Focus", detail: "4 perfect weeks",
-                  systemImage: "trophy.fill", isUnlocked: perfectWeeks >= 4),
+                  systemImage: "trophy.fill", current: perfectWeeks, goal: 4, tier: 6),
             Badge(id: "early", title: "Early Bird", detail: "Finish 5 things a day early",
-                  systemImage: "sunrise.fill", isUnlocked: earlyFinishes >= 5),
+                  systemImage: "sunrise.fill", current: earlyFinishes, goal: 5, tier: 4),
         ]
+    }
+
+    /// The hardest badge earned so far.
+    var mostRecentEarned: Badge? {
+        badges.filter(\.isUnlocked).max { $0.tier < $1.tier }
+    }
+
+    /// The locked badge closest to done; ties go to the easier one.
+    var nextToEarn: Badge? {
+        badges.filter { !$0.isUnlocked }.max { a, b in
+            a.fraction == b.fraction ? a.tier > b.tier : a.fraction < b.fraction
+        }
+    }
+
+    /// Monday to Sunday of the week containing `now`.
+    func weekDays(now: Date = .now, calendar: Calendar = .current) -> [WeekDayStatus] {
+        var mondayCalendar = calendar
+        mondayCalendar.firstWeekday = 2
+        guard let start = mondayCalendar.dateInterval(of: .weekOfYear, for: now)?.start else { return [] }
+        let today = calendar.startOfDay(for: now)
+        return (0..<7).map { offset in
+            let day = calendar.startOfDay(for: calendar.date(byAdding: .day, value: offset, to: start)!)
+            let kind: WeekDayStatus.Kind = (activity[day] ?? 0) > 0 ? .onTime : (day > today ? .future : .empty)
+            return WeekDayStatus(date: day, kind: kind, isToday: day == today)
+        }
+    }
+
+    /// On-time completions during the week containing `now`.
+    func onTimeThisWeek(now: Date = .now, calendar: Calendar = .current) -> Int {
+        weekDays(now: now, calendar: calendar).reduce(0) { $0 + (activity[$1.date] ?? 0) }
     }
 
     /// What's worth celebrating in going from `old` to `self`, most notable first.

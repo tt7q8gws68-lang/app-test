@@ -16,6 +16,16 @@ enum Palette {
     static let warning = Color(light: 0xA15C00, dark: 0xFFB35C)
     static let success = Color(light: 0x1F9D55, dark: 0x30D158)
 
+    /// Accent-colored text (links, the course name on the detail screen).
+    static let accentText = Color(light: 0x0A5BD6, dark: 0x8DB8FF)
+    static let streakOrange = Color(light: 0xE8700F, dark: 0xFF9A5C)
+    /// Finished-on-time marker in the streak week strip.
+    static let streakGreen = Color(light: 0x1F9D55, dark: 0x34C77B)
+    /// Faint fill for empty day circles and unearned tiles.
+    static let faintFill = Color(light: 0x14161C, dark: 0xFFFFFF, lightAlpha: 0.06, darkAlpha: 0.08)
+    static let dashedOutline = Color(light: 0x14161C, dark: 0xFFFFFF, lightAlpha: 0.16, darkAlpha: 0.20)
+    static let divider = Color(light: 0x14161C, dark: 0xFFFFFF, lightAlpha: 0.08, darkAlpha: 0.10)
+
     static let blobBlue = Color(light: 0x7FB2FF, dark: 0x2F5BFF)
     static let blobPeach = Color(light: 0xFFB38A, dark: 0xFF6A2B)
     static let blobMint = Color(light: 0x9EE6D3, dark: 0x14B892)

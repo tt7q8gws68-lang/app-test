@@ -28,7 +28,7 @@ enum DueBucket: Int, CaseIterable, Identifiable {
 
 /// Today plus the next six days: the span covered by the Today and This week groups
 /// and by the weekly progress card.
-struct WeekWindow {
+nonisolated struct WeekWindow {
     let startOfToday: Date
     let startOfTomorrow: Date
     let end: Date
@@ -44,7 +44,7 @@ struct WeekWindow {
     }
 }
 
-extension Date {
+nonisolated extension Date {
     /// Short due label for list rows: "11:59 PM", "Thu, 9:00 AM", "Oct 12, 9:00 AM".
     func dueRowLabel(now: Date = .now, calendar: Calendar = .current) -> String {
         let time = formatted(date: .omitted, time: .shortened)
@@ -69,7 +69,7 @@ extension Date {
     }
 }
 
-extension Date {
+nonisolated extension Date {
     /// "Today", "Tomorrow", "Thu", or "Oct 12" for a planned work day.
     func plannedLabel(now: Date = .now, calendar: Calendar = .current) -> String {
         if calendar.isDateInToday(self) { return "Today" }

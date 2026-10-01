@@ -132,6 +132,41 @@ struct HabitStatsTests {
         #expect(!unlocked.contains("streak10"))
     }
 
+    @Test func badgeProgressAndPicks() {
+        // Best streak 1, nothing else: Off the Mark earned, Hat Trick at 1 / 3 is next.
+        let result = stats([record(due: -1, finished: day(-1, 12))])
+        let hatTrick = result.badges.first { $0.id == "streak3" }!
+        #expect(hatTrick.current == 1 && hatTrick.goal == 3)
+        #expect(result.mostRecentEarned?.id == "first")
+        #expect(result.nextToEarn?.id == "streak3")
+    }
+
+    @Test func noBadgesEarnedYet() {
+        let result = stats([])
+        #expect(result.mostRecentEarned == nil)
+        #expect(result.nextToEarn?.id == "first")
+    }
+
+    @Test func mostRecentIsTheHighestTier() {
+        // 5 in a row, all a day early: first, streak3, streak5 and early are unlocked.
+        let records = (1...5).map { record(due: -$0, finished: day(-$0 - 1)) }
+        #expect(stats(records).mostRecentEarned?.id == "early")
+    }
+
+    @Test func weekStripMarksOnTimeEmptyAndFutureDays() {
+        // Today is Tue Sep 29; the week runs Mon Sep 28 – Sun Oct 4.
+        let result = stats([
+            record(due: 2, finished: day(0, 9)),  // finished today, on time
+            record(due: -1, finished: day(-1, 12)), // finished Monday
+        ])
+        let week = result.weekDays(now: now, calendar: calendar)
+        #expect(week.count == 7)
+        #expect(week.map(\.kind) == [.onTime, .onTime, .future, .future, .future, .future, .future])
+        #expect(week.map(\.isToday) == [false, true, false, false, false, false, false])
+        #expect(result.onTimeThisWeek(now: now, calendar: calendar) == 2)
+        #expect(stats([]).weekDays(now: now, calendar: calendar).first?.kind == .empty)
+    }
+
     @Test func celebratesBadgesMilestonesAndFinishingTheDay() {
         let two = stats([record(due: -2, finished: day(-3)), record(due: -1, finished: day(-2))])
         let three = stats([record(due: -2, finished: day(-3)), record(due: -1, finished: day(-2)), record(due: 0, finished: day(0, 9))])
