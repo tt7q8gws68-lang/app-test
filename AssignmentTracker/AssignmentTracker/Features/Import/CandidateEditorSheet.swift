@@ -120,6 +120,7 @@ struct CandidateEditorSheet: View {
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
+            .background { DuskBackground() }
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(original.title.isEmpty ? "New Item" : "Edit Item")
             .navigationBarTitleDisplayMode(.inline)

@@ -95,6 +95,7 @@ struct CourseEditorSheet: View {
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
+            .background { DuskBackground() }
             .navigationTitle(course == nil ? "New Class" : "Edit Class")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

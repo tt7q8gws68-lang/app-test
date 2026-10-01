@@ -38,6 +38,7 @@ struct StreakInfoSheet: View {
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
+            .background { DuskBackground() }
             .navigationTitle("How Streaks Work")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
