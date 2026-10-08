@@ -37,7 +37,7 @@ struct AssignmentsView: View {
                 // Lazy, so sections far down (Later, a semester of Earlier) build only when reached.
                 LazyVStack(alignment: .leading, spacing: 18) {
                     ScreenHeader(
-                        subtitle: Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
+                        subtitle: now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
                         title: "Assignments"
                     ) {
                         GlassCircleButton(icon: .search, label: isSearching ? "Close search" : "Search") {
@@ -232,8 +232,9 @@ private struct WeekHeroCard: View {
         .padding(.horizontal, 18)
         .padding(.top, 18)
         .padding(.bottom, 14)
+        // No implicit animation here: changes arrive inside the toggle's withAnimation, and a
+        // second transaction on the same glass logs "glassEffect() tried to update multiple times".
         .glassCard(cornerRadius: 28)
-        .animation(.snappy, value: summary)
     }
 }
 

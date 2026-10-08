@@ -18,12 +18,13 @@ struct RootView: View {
     @State private var stats = HabitStats()
     @State private var lastStats: HabitStats?
     @State private var lastStatsDay = Calendar.current.startOfDay(for: .now)
-    /// The time the screens compare due dates against. It moves on at each due time and when the
-    /// app comes back, so an item turns overdue on time instead of on the next unrelated change.
+    /// Finished items at the last update. Celebrations need this to go up, so deleting or
+    /// rescheduling an open item can't trigger "All done for today" or a streak milestone.
+    @State private var lastFinishedCount = 0
+    /// The time the screens compare due dates against. It moves on at each due time, at midnight
+    /// and when the app comes back, so "Today", "Overdue" and the streak stay right without
+    /// rebuilding the tabs (which would throw away open sheets and navigation).
     @State private var now = Date.now
-    /// Start of the current day. Changing it rebuilds the tabs, so "Today", "Overdue" and the
-    /// streak are right after the app sits in the background overnight or stays open past midnight.
-    @State private var currentDay = Calendar.current.startOfDay(for: .now)
     @Environment(\.scenePhase) private var scenePhase
 
     private var records: [CompletionRecord] {
@@ -54,7 +55,6 @@ struct RootView: View {
                 StreaksView(stats: stats)
             } label: { AppTab.streaks.label }
         }
-        .id(currentDay)
         .environment(\.currentTime, now)
         .foregroundStyle(Palette.text)
         .overlay(alignment: .top) {
@@ -120,11 +120,9 @@ extension AppTab {
 }
 
 extension RootView {
-    /// Moves `now` on, and rebuilds the tabs when the day has changed.
+    /// Moves `now` on; every screen that shows "Today" or "Overdue" reads it.
     private func refreshTime() {
         now = .now
-        let today = Calendar.current.startOfDay(for: now)
-        if today != currentDay { currentDay = today }
         // Time passing isn't an achievement: update without celebrating.
         updateStats(from: records, celebrate: false)
     }
@@ -135,10 +133,13 @@ extension RootView {
         // only changes within the same day are celebrated.
         let old = lastStats
         let statsDay = lastStatsDay
+        let finished = records.filter { $0.completedAt != nil }.count
+        let finishedMore = finished > lastFinishedCount
         stats = new
         lastStats = new
         lastStatsDay = Calendar.current.startOfDay(for: .now)
-        guard celebrate, Calendar.current.isDateInToday(statsDay),
+        lastFinishedCount = finished
+        guard celebrate, finishedMore, Calendar.current.isDateInToday(statsDay),
               let old, let found = new.celebration(since: old) else { return }
         withAnimation(.spring(duration: 0.45, bounce: 0.3)) { celebration = found }
     }

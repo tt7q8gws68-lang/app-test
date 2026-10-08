@@ -17,6 +17,7 @@ struct CalendarView: View {
     var focusRequest = 0
 
     @Query(sort: \Assignment.dueDate) private var assignments: [Assignment]
+    @Environment(\.currentTime) private var now
     @State private var mode: Mode = .month
     @State private var month = Calendar.current.dateInterval(of: .month, for: .now)!.start
 
@@ -25,12 +26,12 @@ struct CalendarView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     ScreenHeader(
-                        subtitle: Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
+                        subtitle: now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
                         title: "Calendar"
                     ) {
                         GlassCapsuleButton(title: "Today") {
                             withAnimation(.snappy) {
-                                selectedDay = Calendar.current.startOfDay(for: .now)
+                                selectedDay = Calendar.current.startOfDay(for: now)
                                 show(selectedDay)
                             }
                         }
@@ -169,9 +170,10 @@ private struct DayCell: View {
     let isSelected: Bool
     let due: [Assignment]
     let hasPlanned: Bool
+    @Environment(\.currentTime) private var now
 
-    private var isToday: Bool { Calendar.current.isDateInToday(day) }
-    private var isPast: Bool { day < Calendar.current.startOfDay(for: .now) }
+    private var isToday: Bool { Calendar.current.isDate(day, inSameDayAs: now) }
+    private var isPast: Bool { day < Calendar.current.startOfDay(for: now) }
 
     var body: some View {
         VStack(spacing: 3) {
@@ -228,6 +230,7 @@ private struct DayCell: View {
 private struct DayAgenda: View {
     let day: Date
     let assignments: [Assignment]
+    @Environment(\.currentTime) private var now
 
     private let calendar = Calendar.current
 
@@ -237,7 +240,7 @@ private struct DayAgenda: View {
     }
 
     private var title: String {
-        calendar.isDateInToday(day) ? "Today" : day.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        calendar.isDate(day, inSameDayAs: now) ? "Today" : day.formatted(.dateTime.weekday(.wide).month(.wide).day())
     }
 
     var body: some View {

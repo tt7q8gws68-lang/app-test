@@ -4,6 +4,7 @@ import SwiftUI
 /// stretches (several deadlines, an exam) show up early enough to plan around.
 struct WeeksAheadList: View {
     let assignments: [Assignment]
+    @Environment(\.currentTime) private var now
 
     private let calendar = Calendar.current
     private static let weekCount = 8
@@ -15,12 +16,12 @@ struct WeeksAheadList: View {
     }
 
     private var overdue: [Assignment] {
-        let startOfToday = calendar.startOfDay(for: .now)
+        let startOfToday = calendar.startOfDay(for: now)
         return assignments.filter { !$0.isCompleted && $0.dueDate < startOfToday }
     }
 
     private var weeks: [Week] {
-        let thisWeek = calendar.dateInterval(of: .weekOfYear, for: .now)!.start
+        let thisWeek = calendar.dateInterval(of: .weekOfYear, for: now)!.start
         return (0..<Self.weekCount).map { offset in
             let start = calendar.date(byAdding: .weekOfYear, value: offset, to: thisWeek)!
             let end = calendar.date(byAdding: .weekOfYear, value: 1, to: start)!
@@ -101,6 +102,7 @@ private struct WeekSection: View {
 private struct DayLoadStrip: View {
     let start: Date
     let items: [Assignment]
+    @Environment(\.currentTime) private var now
 
     private let calendar = Calendar.current
 
@@ -116,8 +118,8 @@ private struct DayLoadStrip: View {
                         .frame(maxWidth: 18)
                         .frame(height: CGFloat(4 + min(dueThatDay.count, 4) * 7))
                     Text(day.formatted(.dateTime.weekday(.narrow)))
-                        .font(.caption2.weight(calendar.isDateInToday(day) ? .bold : .regular))
-                        .foregroundStyle(calendar.isDateInToday(day) ? Palette.accent : Palette.secondaryText)
+                        .font(.caption2.weight(calendar.isDate(day, inSameDayAs: now) ? .bold : .regular))
+                        .foregroundStyle(calendar.isDate(day, inSameDayAs: now) ? Palette.accent : Palette.secondaryText)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)

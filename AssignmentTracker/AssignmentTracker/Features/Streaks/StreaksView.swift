@@ -113,16 +113,17 @@ private struct Stat: View {
 
 private struct ThisWeekCard: View {
     let stats: HabitStats
+    @Environment(\.currentTime) private var now
 
     var body: some View {
-        let days = stats.weekDays()
+        let days = stats.weekDays(now: now)
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text("This week")
                     .font(.body.weight(.semibold))
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
-                Text("\(stats.onTimeThisWeek()) on time")
+                Text("\(stats.onTimeThisWeek(now: now)) on time")
                     .font(.subheadline)
                     .foregroundStyle(Palette.secondaryText)
             }
