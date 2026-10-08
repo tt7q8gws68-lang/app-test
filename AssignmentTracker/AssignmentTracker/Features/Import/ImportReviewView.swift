@@ -11,7 +11,7 @@ struct ImportReviewView: View {
     @State private var editing: ImportCandidate.ID?
     @State private var notificationsBlocked = false
 
-    private enum Group: CaseIterable {
+    private enum ReviewGroup: CaseIterable {
         case check, ready, noDate, past, duplicate
 
         var title: String {
@@ -25,7 +25,7 @@ struct ImportReviewView: View {
         }
     }
 
-    private func group(of candidate: ImportCandidate) -> Group {
+    private func group(of candidate: ImportCandidate) -> ReviewGroup {
         guard candidate.dueDate != nil else { return .noDate }
         if candidate.duplicateOf != nil { return .duplicate }
         if candidate.isPast() { return .past }
@@ -51,7 +51,7 @@ struct ImportReviewView: View {
                     .glassCard()
                 }
 
-                ForEach(Group.allCases, id: \.self) { group in
+                ForEach(ReviewGroup.allCases, id: \.self) { group in
                     let items = model.candidates
                         .filter { self.group(of: $0) == group }
                         .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }

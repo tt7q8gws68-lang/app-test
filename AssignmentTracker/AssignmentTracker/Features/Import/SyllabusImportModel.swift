@@ -180,7 +180,7 @@ final class SyllabusImportModel {
             let wasDuplicate = candidates[index].duplicateOf != nil
             candidates[index].duplicateOf = ImportCandidateBuilder.duplicate(of: candidates[index], in: existing, calendar: calendar)?.title
             if wasDuplicate != (candidates[index].duplicateOf != nil) {
-                candidates[index].isIncluded = ImportCandidateBuilder.defaultInclusion(for: candidates[index], resolver: resolver)
+                candidates[index].isIncluded = ImportCandidateBuilder.defaultInclusion(for: candidates[index])
             }
         }
     }

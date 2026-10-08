@@ -73,7 +73,7 @@ nonisolated enum ImportCandidateBuilder {
             var candidate = ImportCandidate(title: item.title, kind: item.kind, dateText: item.dateText, weight: item.weight, notes: item.notes)
             resolve(&candidate, with: resolver)
             candidate.duplicateOf = duplicate(of: candidate, in: existing, calendar: resolver.calendar)?.title
-            candidate.isIncluded = defaultInclusion(for: candidate, resolver: resolver)
+            candidate.isIncluded = defaultInclusion(for: candidate)
             return candidate
         }
     }
@@ -85,7 +85,7 @@ nonisolated enum ImportCandidateBuilder {
             resolve(&candidates[index], with: resolver)
             // Items that just gained a date become importable.
             if !hadDate, candidates[index].dueDate != nil {
-                candidates[index].isIncluded = defaultInclusion(for: candidates[index], resolver: resolver)
+                candidates[index].isIncluded = defaultInclusion(for: candidates[index])
             }
         }
     }
@@ -101,7 +101,7 @@ nonisolated enum ImportCandidateBuilder {
         candidate.dateStatus = resolved.status
     }
 
-    static func defaultInclusion(for candidate: ImportCandidate, resolver: SyllabusDateResolver) -> Bool {
+    static func defaultInclusion(for candidate: ImportCandidate) -> Bool {
         candidate.dueDate != nil && candidate.duplicateOf == nil
     }
 

@@ -11,7 +11,7 @@ struct AssignmentsView: View {
         var id: Self { self }
     }
 
-    private struct Section: Identifiable {
+    private struct BucketSection: Identifiable {
         let bucket: DueBucket
         let items: [Assignment]
         /// Open items in the whole bucket, regardless of the filter.
@@ -147,7 +147,7 @@ struct AssignmentsView: View {
         }, now: now)
     }
 
-    private var sections: [Section] {
+    private var sections: [BucketSection] {
         let window = WeekWindow(now: now)
         let byBucket = Dictionary(grouping: assignments) {
             DueBucket.of(dueDate: $0.dueDate, isCompleted: $0.isCompleted, in: window)
@@ -165,7 +165,7 @@ struct AssignmentsView: View {
             guard !items.isEmpty else { return nil }
             // Most recent first for past work; soonest first everywhere else.
             if bucket == .earlier { items.reverse() }
-            return Section(bucket: bucket, items: items, left: all.filter { !$0.isCompleted }.count)
+            return BucketSection(bucket: bucket, items: items, left: all.filter { !$0.isCompleted }.count)
         }
     }
 

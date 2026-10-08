@@ -16,10 +16,6 @@ enum DueBucket: Int, CaseIterable, Identifiable {
         }
     }
 
-    static func of(_ assignment: Assignment, now: Date = .now, calendar: Calendar = .current) -> DueBucket {
-        of(dueDate: assignment.dueDate, isCompleted: assignment.isCompleted, in: WeekWindow(now: now, calendar: calendar))
-    }
-
     /// Bucketing against a window built once, for grouping a whole list.
     nonisolated static func of(dueDate due: Date, isCompleted: Bool, in window: WeekWindow) -> DueBucket {
         if due < window.startOfToday { return isCompleted ? .earlier : .overdue }
