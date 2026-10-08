@@ -33,6 +33,7 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
     }
 
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        viewControllers.count > 1
+        // Not mid-push or mid-pop: starting a swipe then can freeze the stack.
+        viewControllers.count > 1 && transitionCoordinator == nil
     }
 }
