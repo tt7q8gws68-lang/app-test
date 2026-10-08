@@ -121,11 +121,9 @@ nonisolated struct HabitStats: Equatable, Sendable {
     }
 
     private static func perfectWeekCount(_ records: [CompletionRecord], now: Date, calendar: Calendar) -> Int {
-        var mondayCalendar = calendar
-        mondayCalendar.firstWeekday = 2
-        guard let thisWeek = mondayCalendar.dateInterval(of: .weekOfYear, for: now)?.start else { return 0 }
+        guard let thisWeek = calendar.mondayWeekStart(for: now) else { return 0 }
         let byWeek = Dictionary(grouping: records.filter { $0.dueDate < thisWeek }) {
-            mondayCalendar.dateInterval(of: .weekOfYear, for: $0.dueDate)?.start ?? $0.dueDate
+            calendar.mondayWeekStart(for: $0.dueDate) ?? $0.dueDate
         }
         return byWeek.values.filter { $0.allSatisfy(\.isOnTime) }.count
     }
@@ -169,9 +167,7 @@ nonisolated struct HabitStats: Equatable, Sendable {
 
     /// Monday to Sunday of the week containing `now`.
     func weekDays(now: Date = .now, calendar: Calendar = .current) -> [WeekDayStatus] {
-        var mondayCalendar = calendar
-        mondayCalendar.firstWeekday = 2
-        guard let start = mondayCalendar.dateInterval(of: .weekOfYear, for: now)?.start else { return [] }
+        guard let start = calendar.mondayWeekStart(for: now) else { return [] }
         let today = calendar.startOfDay(for: now)
         return (0..<7).map { offset in
             let day = calendar.startOfDay(for: calendar.date(byAdding: .day, value: offset, to: start)!)

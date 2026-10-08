@@ -43,6 +43,16 @@ nonisolated struct WeekWindow {
     }
 }
 
+nonisolated extension Calendar {
+    /// Start of the Monday-to-Sunday week containing `date`, whatever this calendar's
+    /// `firstWeekday` is. Other settings (time zone, `minimumDaysInFirstWeek`) are kept.
+    func mondayWeekStart(for date: Date) -> Date? {
+        var mondayCalendar = self
+        mondayCalendar.firstWeekday = 2
+        return mondayCalendar.dateInterval(of: .weekOfYear, for: date)?.start
+    }
+}
+
 nonisolated extension Date {
     /// Short due label for list rows: "11:59 PM", "Thu, 9:00 AM", "Oct 12, 9:00 AM".
     func dueRowLabel(now: Date = .now, calendar: Calendar = .current) -> String {

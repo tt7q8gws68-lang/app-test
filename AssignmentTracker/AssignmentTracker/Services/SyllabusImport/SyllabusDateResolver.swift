@@ -169,9 +169,7 @@ nonisolated struct SyllabusDateResolver {
             weekday = 6 // Friday
         }
 
-        var mondayCalendar = calendar
-        mondayCalendar.firstWeekday = 2
-        guard let weekOneStart = mondayCalendar.dateInterval(of: .weekOfYear, for: termStart)?.start,
+        guard let weekOneStart = calendar.mondayWeekStart(for: termStart),
               let weekStart = calendar.date(byAdding: .day, value: (week - 1) * 7, to: weekOneStart)
         else { return .missing("Couldn’t place Week \(weekNumber)") }
 

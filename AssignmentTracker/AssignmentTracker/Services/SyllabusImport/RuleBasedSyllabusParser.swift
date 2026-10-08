@@ -138,9 +138,7 @@ nonisolated struct RuleBasedSyllabusParser {
     }
 
     private func weekOneStart(forWeek week: Int, containing date: Date) -> Date? {
-        var mondayCalendar = calendar
-        mondayCalendar.firstWeekday = 2
-        guard let start = mondayCalendar.dateInterval(of: .weekOfYear, for: date)?.start else { return nil }
+        guard let start = calendar.mondayWeekStart(for: date) else { return nil }
         return calendar.date(byAdding: .day, value: -(week - 1) * 7, to: start)
     }
 

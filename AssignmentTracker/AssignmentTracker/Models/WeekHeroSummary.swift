@@ -36,9 +36,7 @@ nonisolated struct WeekHeroSummary: Equatable, Sendable {
         done = inWindow.filter(\.isCompleted).count
         dueToday = items.filter { !$0.isCompleted && calendar.isDate($0.dueDate, inSameDayAs: now) }.count
 
-        var mondayCalendar = calendar
-        mondayCalendar.firstWeekday = 2
-        guard let monday = mondayCalendar.dateInterval(of: .weekOfYear, for: now)?.start else { return }
+        guard let monday = calendar.mondayWeekStart(for: now) else { return }
         let today = calendar.startOfDay(for: now)
         days = (0..<7).map { offset in
             let day = calendar.startOfDay(for: calendar.date(byAdding: .day, value: offset, to: monday)!)
