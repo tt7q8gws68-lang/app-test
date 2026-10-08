@@ -18,6 +18,10 @@ nonisolated struct ZipArchive {
         let localHeaderOffset: Int
     }
 
+    /// Largest entry this reader will unpack. The declared size comes from the file itself,
+    /// so a tiny damaged or hostile archive could otherwise claim gigabytes.
+    static let maxEntrySize = 50_000_000
+
     private let data: Data
     private let entries: [String: Entry]
 
@@ -30,6 +34,7 @@ nonisolated struct ZipArchive {
 
     func contents(of name: String) throws -> Data {
         guard let entry = entries[name] else { throw ZipError.entryNotFound(name) }
+        guard entry.uncompressedSize <= Self.maxEntrySize else { throw ZipError.corrupt }
         let local = entry.localHeaderOffset
         guard data.uint32(at: local) == 0x0403_4B50,
               let nameLength = data.uint16(at: local + 26),
