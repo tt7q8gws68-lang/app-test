@@ -67,6 +67,17 @@ final class SyllabusImportModel {
         }
     }
 
+    /// Whether an item counts as already passed for this import. Uses the same day and calendar
+    /// as `pastIncludedCount` and `save(in:)`, so the review list agrees with them.
+    func isPast(_ candidate: ImportCandidate) -> Bool {
+        candidate.isPast(relativeTo: referenceDate, calendar: calendar)
+    }
+
+    /// Start of the import day; the default when the user sets the first day of classes.
+    var startOfReferenceDay: Date {
+        calendar.startOfDay(for: referenceDate)
+    }
+
     /// Whether any item's date depends on the semester start.
     var usesRelativeWeeks: Bool {
         candidates.contains { $0.dateText?.range(of: #"\bw(ee)?ks?\b"#, options: [.regularExpression, .caseInsensitive]) != nil }

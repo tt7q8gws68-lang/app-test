@@ -28,7 +28,7 @@ struct ImportReviewView: View {
     private func group(of candidate: ImportCandidate) -> ReviewGroup {
         guard candidate.dueDate != nil else { return .noDate }
         if candidate.duplicateOf != nil { return .duplicate }
-        if candidate.isPast() { return .past }
+        if model.isPast(candidate) { return .past }
         return candidate.reviewReason == nil ? .ready : .check
     }
 
@@ -264,7 +264,7 @@ struct ImportReviewView: View {
             .frame(minHeight: 52)
         } else {
             Button {
-                model.termStart = Calendar.current.startOfDay(for: .now)
+                model.termStart = model.startOfReferenceDay
             } label: {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
