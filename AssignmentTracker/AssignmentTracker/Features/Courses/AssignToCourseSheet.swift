@@ -58,6 +58,7 @@ struct AssignToCourseSheet: View {
                 ForEach(courses) { course in
                     Button(course.name) {
                         withAnimation(.snappy) { assignment.course = course }
+                        ReminderScheduler.sync(assignment)
                     }
                 }
             } label: {

@@ -120,8 +120,13 @@ struct CourseEditorSheet: View {
 
     private func save() {
         if let course {
+            let renamed = course.name != trimmedName
             course.name = trimmedName
             course.colorToken = color
+            // Pending reminders carry the class name, so refresh them after a rename.
+            if renamed {
+                for assignment in course.assignments { ReminderScheduler.sync(assignment) }
+            }
         } else {
             let course = Course(name: trimmedName, color: color, sortIndex: (courses.map(\.sortIndex).max() ?? -1) + 1)
             modelContext.insert(course)
@@ -131,12 +136,18 @@ struct CourseEditorSheet: View {
     }
 
     private func delete(_ course: Course, withAssignments: Bool) {
+        let keptAssignments = withAssignments ? [] : course.assignments
         if withAssignments {
             for assignment in course.assignments {
                 assignment.delete(from: modelContext)
             }
         }
         modelContext.delete(course)
+        // Kept work no longer belongs to a class; its reminder must stop naming it.
+        for assignment in keptAssignments {
+            assignment.course = nil
+            ReminderScheduler.sync(assignment)
+        }
         dismiss()
     }
 }
