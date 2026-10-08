@@ -133,7 +133,7 @@ final class SyllabusImportModel {
         fingerprint = extracted.fingerprint
         engine = analysis.engine
         alreadyImported = course?.importedSyllabusFingerprints.contains(extracted.fingerprint) ?? false
-        // Set without triggering re-resolution; candidates are built with it below.
+        // The didSet re-resolves the current candidates first; they're replaced just below.
         termStart = analysis.termStart
         candidates = ImportCandidateBuilder.candidates(from: analysis.items, resolver: resolver, existing: existingAssignments)
     }

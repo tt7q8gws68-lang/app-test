@@ -70,6 +70,9 @@ nonisolated struct SyllabusTextExtractor {
     /// Below this many characters a PDF page is treated as scanned and sent to OCR.
     private static let minimumPageText = 25
 
+    /// Below this many characters the whole syllabus is treated as having no readable text.
+    private static let minimumSyllabusText = 40
+
     @concurrent
     func extract(from url: URL) async throws -> ExtractedSyllabus {
         let isScoped = url.startAccessingSecurityScopedResource()
@@ -127,7 +130,7 @@ nonisolated struct SyllabusTextExtractor {
         }
 
         result.fingerprint = fingerprint
-        guard result.text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 40 else {
+        guard result.text.trimmingCharacters(in: .whitespacesAndNewlines).count >= Self.minimumSyllabusText else {
             throw SyllabusImportError.noTextFound
         }
         return result
@@ -145,10 +148,9 @@ nonisolated struct SyllabusTextExtractor {
         return try await extract(images: images, name: name, originalData: photos)
     }
 
-    /// Photos and document-camera scans.
+    /// Photos and document-camera scans. `originalData` (the photo files) is used to recognize a
+    /// repeat import; scans have none, so their recognized text stands in.
     @concurrent
-    /// `originalData` (the photo files) is used to recognize a repeat import; scans have none,
-    /// so their recognized text stands in.
     func extract(images: [CGImage], name: String, originalData: [Data] = []) async throws -> ExtractedSyllabus {
         var pages: [String] = []
         for image in images {
@@ -156,7 +158,7 @@ nonisolated struct SyllabusTextExtractor {
             pages.append(try await recognizeText(in: image))
         }
         let text = pages.joined(separator: "\n\n")
-        guard text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 40 else {
+        guard text.trimmingCharacters(in: .whitespacesAndNewlines).count >= Self.minimumSyllabusText else {
             throw SyllabusImportError.noTextFound
         }
         let fingerprint = Self.fingerprint(of: originalData.isEmpty ? [Data(text.utf8)] : originalData)
