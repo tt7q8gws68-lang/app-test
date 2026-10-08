@@ -133,6 +133,18 @@ nonisolated struct SyllabusTextExtractor {
         return result
     }
 
+    /// Photo-library files, decoded here so large HEICs aren't decoded on the main actor.
+    @concurrent
+    func extract(photos: [Data], name: String) async throws -> ExtractedSyllabus {
+        var images: [CGImage] = []
+        for photo in photos {
+            try Task.checkCancellation()
+            if let image = Self.cgImage(from: photo) { images.append(image) }
+        }
+        guard !images.isEmpty else { throw SyllabusImportError.unreadable("The photos couldn’t be opened.") }
+        return try await extract(images: images, name: name, originalData: photos)
+    }
+
     /// Photos and document-camera scans.
     @concurrent
     /// `originalData` (the photo files) is used to recognize a repeat import; scans have none,
@@ -140,6 +152,7 @@ nonisolated struct SyllabusTextExtractor {
     func extract(images: [CGImage], name: String, originalData: [Data] = []) async throws -> ExtractedSyllabus {
         var pages: [String] = []
         for image in images {
+            try Task.checkCancellation()
             pages.append(try await recognizeText(in: image))
         }
         let text = pages.joined(separator: "\n\n")
@@ -164,6 +177,7 @@ nonisolated struct SyllabusTextExtractor {
         var pages: [String] = []
         var recognized = 0
         for index in 0..<document.pageCount {
+            try Task.checkCancellation()
             guard let page = document.page(at: index) else { continue }
             let text = page.string ?? ""
             if text.trimmingCharacters(in: .whitespacesAndNewlines).count >= Self.minimumPageText {

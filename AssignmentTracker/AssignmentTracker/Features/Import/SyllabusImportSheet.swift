@@ -14,6 +14,8 @@ struct SyllabusImportSheet: View {
     @State private var isScanning = false
     @State private var isAddingCourse = false
     @State private var photoSelection: [PhotosPickerItem] = []
+    /// The import in flight; cancelled when the sheet closes.
+    @State private var importTask: Task<Void, Never>?
 
     init(course: Course? = nil) {
         _model = State(initialValue: SyllabusImportModel(course: course))
@@ -71,7 +73,10 @@ struct SyllabusImportSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) { dismiss() } label: { Label("Cancel", appIcon: .close) }
+                    Button(role: .cancel) {
+                        importTask?.cancel()
+                        dismiss()
+                    } label: { Label("Cancel", appIcon: .close) }
                 }
             }
             .navigationDestination(isPresented: Binding(
@@ -83,7 +88,7 @@ struct SyllabusImportSheet: View {
             .fileImporter(isPresented: $isPickingFile, allowedContentTypes: SyllabusTextExtractor.supportedTypes) { result in
                 switch result {
                 case .success(let url):
-                    Task { await model.importFile(url) }
+                    startImport { await model.importFile(url) }
                 case .failure(let error):
                     model.error = .unreadable(error.localizedDescription)
                 }
@@ -91,7 +96,8 @@ struct SyllabusImportSheet: View {
             .onChange(of: photoSelection) { _, items in
                 guard !items.isEmpty else { return }
                 photoSelection = []
-                Task {
+                startImport {
+                    model.prepareForPhotos(count: items.count)
                     var photos: [Data] = []
                     for item in items {
                         if let data = try? await item.loadTransferable(type: Data.self) { photos.append(data) }
@@ -103,7 +109,7 @@ struct SyllabusImportSheet: View {
                 DocumentScanner { images in
                     isScanning = false
                     guard !images.isEmpty else { return }
-                    Task { await model.importScan(images) }
+                    startImport { await model.importScan(images) }
                 }
                 .ignoresSafeArea()
             }
@@ -112,6 +118,16 @@ struct SyllabusImportSheet: View {
             }
         }
         .interactiveDismissDisabled(isWorking || model.phase == .reviewing)
+        .onDisappear { importTask?.cancel() }
+    }
+
+    /// Runs one import at a time.
+    private func startImport(_ work: @escaping @MainActor () async -> Void) {
+        guard importTask == nil, !isWorking else { return }
+        importTask = Task {
+            await work()
+            importTask = nil
+        }
     }
 
     private var sourceCard: some View {

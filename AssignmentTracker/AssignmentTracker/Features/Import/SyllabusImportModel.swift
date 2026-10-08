@@ -32,6 +32,7 @@ final class SyllabusImportModel {
     private(set) var recognizedPageCount = 0
     private(set) var alreadyImported = false
     private var fingerprint = ""
+    private var hasSaved = false
 
     private let calendar: Calendar
     private let referenceDate: Date
@@ -79,12 +80,16 @@ final class SyllabusImportModel {
         }
     }
 
+    /// Shows progress while the photo picker hands over the files, before `importPhotos`.
+    func prepareForPhotos(count: Int) {
+        error = nil
+        phase = .working(count == 1 ? "Loading photo…" : "Loading \(count) photos…")
+    }
+
     func importPhotos(_ photos: [Data]) async {
         let name = photos.count == 1 ? "Photo" : "\(photos.count) photos"
         await run(named: name) {
-            let images = photos.compactMap(SyllabusTextExtractor.cgImage(from:))
-            guard !images.isEmpty else { throw SyllabusImportError.unreadable("The photos couldn’t be opened.") }
-            return try await SyllabusTextExtractor().extract(images: images, name: name, originalData: photos)
+            try await SyllabusTextExtractor().extract(photos: photos, name: name)
         }
     }
 
@@ -104,18 +109,19 @@ final class SyllabusImportModel {
             phase = .working(usesModel ? "Finding assignments with Apple Intelligence…" : "Finding assignments…")
             let analysis = await SyllabusAnalyzer(calendar: calendar, referenceDate: referenceDate)
                 .analyze(extracted.text) { [weak self] done, total in
-                    guard total > 1 else { return }
+                    guard total > 1, !Task.isCancelled else { return }
                     await MainActor.run {
                         self?.phase = .working("Finding assignments with Apple Intelligence…\nPart \(min(done + 1, total)) of \(total)")
                     }
                 }
+            // The analyzer falls back to the rules when cancelled, so check before showing results.
+            try Task.checkCancellation()
             apply(analysis, from: extracted)
             phase = .reviewing
-        } catch let importError as SyllabusImportError {
-            error = importError
-            phase = .choosingSource
         } catch {
-            self.error = .unreadable(error.localizedDescription)
+            // Cancelled when the sheet closed; there's nothing left to show an error on.
+            guard !Task.isCancelled else { return }
+            self.error = error as? SyllabusImportError ?? .unreadable(error.localizedDescription)
             phase = .choosingSource
         }
     }
@@ -157,6 +163,7 @@ final class SyllabusImportModel {
 
     func startOver() {
         phase = .choosingSource
+        hasSaved = false
         candidates = []
         error = nil
     }
@@ -181,9 +188,11 @@ final class SyllabusImportModel {
     // MARK: - Saving
 
     /// Adds the checked items to the course as regular assignments. Returns how many were added.
+    /// Runs once per review, so a double-tapped Save can't add everything twice.
     @discardableResult
     func save(in context: ModelContext) -> Int {
-        guard let course else { return 0 }
+        guard let course, !hasSaved else { return 0 }
+        hasSaved = true
         var created: [Assignment] = []
         for candidate in candidates where candidate.isIncluded {
             guard let dueDate = candidate.dueDate else { continue }

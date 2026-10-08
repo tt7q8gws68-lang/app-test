@@ -45,7 +45,8 @@ nonisolated struct FoundationModelSyllabusParser {
 
     /// Reads the syllabus in chunks. A chunk that fails (a guardrail, or a response too long
     /// for the context window) is split and retried, and if it still fails it's skipped, so one
-    /// bad passage can't discard what the other chunks found. Throws only if every chunk failed.
+    /// bad passage can't discard what the other chunks found. Throws only if every chunk failed,
+    /// or `CancellationError` if the task is cancelled.
     /// `progress` gets (chunks done, total chunks).
     @concurrent
     func parse(
@@ -57,6 +58,7 @@ nonisolated struct FoundationModelSyllabusParser {
         var failures = 0
 
         for (index, chunk) in chunks.enumerated() {
+            try Task.checkCancellation()
             await progress(index, chunks.count)
             do {
                 for generated in try await Self.generate(chunk) {
@@ -66,6 +68,8 @@ nonisolated struct FoundationModelSyllabusParser {
                     items += generated.items.compactMap { Self.detectedItem(from: $0, source: chunk) }
                 }
             } catch {
+                // A cancelled import isn't a failed chunk; stop rather than read the rest.
+                if error is CancellationError || Task.isCancelled { throw CancellationError() }
                 failures += 1
             }
         }
@@ -90,6 +94,7 @@ nonisolated struct FoundationModelSyllabusParser {
             guard halves.count == 2 else { throw ChunkFailure() }
             var results: [GeneratedSyllabus] = []
             for half in halves {
+                try Task.checkCancellation()
                 results += (try? await generate(half, depth: depth + 1)) ?? []
             }
             if results.isEmpty { throw ChunkFailure() }
