@@ -41,7 +41,7 @@ struct PlanCard: View {
                         .foregroundStyle(Palette.secondaryText)
                         .frame(width: 24, height: 24)
                         .background(Palette.faintFill, in: .circle)
-                        .frame(width: 36, height: 44)
+                        .frame(width: 44, height: 44)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
