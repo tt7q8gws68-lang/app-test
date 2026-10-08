@@ -122,6 +122,11 @@ extension AppTab {
 extension RootView {
     /// Moves `now` on; every screen that shows "Today" or "Overdue" reads it.
     private func refreshTime() {
+        // Calendar was showing today: keep it on today once the day changes.
+        let calendar = Calendar.current
+        if calendar.isDate(calendarDay, inSameDayAs: now), !calendar.isDate(now, inSameDayAs: .now) {
+            calendarDay = calendar.startOfDay(for: .now)
+        }
         now = .now
         // Time passing isn't an achievement: update without celebrating.
         updateStats(from: records, celebrate: false)

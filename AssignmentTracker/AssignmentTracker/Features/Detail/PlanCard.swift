@@ -3,12 +3,13 @@ import SwiftUI
 /// "Plan to work on": the day the person intends to do the work, shown on the Calendar tab.
 struct PlanCard: View {
     let assignment: Assignment
+    @Environment(\.currentTime) private var now
 
     private var suggestedDay: Date {
         // The day before it's due, but never earlier than today.
         let calendar = Calendar.current
         let dayBefore = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: assignment.dueDate))!
-        return max(dayBefore, calendar.startOfDay(for: .now))
+        return max(dayBefore, calendar.startOfDay(for: now))
     }
 
     var body: some View {
@@ -30,7 +31,7 @@ struct PlanCard: View {
                 DatePicker(
                     "Work day",
                     selection: Binding(get: { planned }, set: { assignment.plan(for: $0) }),
-                    in: Calendar.current.startOfDay(for: .now)...,
+                    in: Calendar.current.startOfDay(for: now)...,
                     displayedComponents: .date
                 )
                 .labelsHidden()
