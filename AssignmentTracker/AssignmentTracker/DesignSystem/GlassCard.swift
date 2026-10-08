@@ -16,7 +16,7 @@ extension View {
     func accentFill<S: Shape>(in shape: S) -> some View {
         background {
             shape.fill(Palette.accentFill.opacity(0.92))
-                .overlay { shape.stroke(Color.white.opacity(0.4), lineWidth: 1) }
+                .overlay { shape.stroke(Palette.onAccentFill.opacity(0.4), lineWidth: 1) }
                 .shadow(color: Palette.accentFill.opacity(0.35), radius: 10, y: 8)
         }
     }

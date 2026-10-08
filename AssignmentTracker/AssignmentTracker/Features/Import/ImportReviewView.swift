@@ -120,7 +120,7 @@ struct ImportReviewView: View {
                 } label: {
                     Text(saveTitle)
                         .font(.headline)
-                        .foregroundStyle(Color.white)
+                        .foregroundStyle(Palette.onAccentFill)
                         .frame(maxWidth: .infinity, minHeight: 52)
                         .contentShape(.capsule)
                 }
