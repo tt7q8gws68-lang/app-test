@@ -197,6 +197,8 @@ private struct BadgesSummary: View {
 
     var body: some View {
         let earned = stats.badges.filter(\.isUnlocked).count
+        let recent = stats.mostRecentEarned
+        let next = stats.nextToEarn
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 SectionHeader("Badges")
@@ -213,13 +215,13 @@ private struct BadgesSummary: View {
             }
 
             GlassGroup {
-                if let recent = stats.mostRecentEarned {
+                if let recent {
                     BadgeRow(badge: recent)
                 }
-                if stats.mostRecentEarned != nil, stats.nextToEarn != nil {
+                if recent != nil, next != nil {
                     InsetDivider()
                 }
-                if let next = stats.nextToEarn {
+                if let next {
                     BadgeRow(badge: next)
                 }
             }

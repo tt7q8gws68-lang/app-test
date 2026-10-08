@@ -81,10 +81,11 @@ nonisolated struct SyllabusAnalyzer {
     ) -> [DetectedItem] {
         var merged: [DetectedItem] = []
         var matchedRules = Set<Int>()
+        let ruleTitles = rules.map { RuleBasedSyllabusParser.normalized($0.title) }
         for var item in model {
             let title = RuleBasedSyllabusParser.normalized(item.title)
             if let index = rules.indices.first(where: {
-                !matchedRules.contains($0) && RuleBasedSyllabusParser.normalized(rules[$0].title) == title
+                !matchedRules.contains($0) && ruleTitles[$0] == title
             }) {
                 matchedRules.insert(index)
                 let rule = rules[index]

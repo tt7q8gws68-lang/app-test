@@ -149,6 +149,7 @@ struct AssignmentsView: View {
 
     private var sections: [BucketSection] {
         let window = WeekWindow(now: now)
+        let query = searchText.trimmingCharacters(in: .whitespaces)
         let byBucket = Dictionary(grouping: assignments) {
             DueBucket.of(dueDate: $0.dueDate, isCompleted: $0.isCompleted, in: window)
         }
@@ -161,7 +162,7 @@ struct AssignmentsView: View {
                 case .done: assignment.isCompleted
                 }
             }
-            .filter(matchesSearch)
+            .filter { matchesSearch($0, query: query) }
             guard !items.isEmpty else { return nil }
             // Most recent first for past work; soonest first everywhere else.
             if bucket == .earlier { items.reverse() }
@@ -169,8 +170,7 @@ struct AssignmentsView: View {
         }
     }
 
-    private func matchesSearch(_ assignment: Assignment) -> Bool {
-        let query = searchText.trimmingCharacters(in: .whitespaces)
+    private func matchesSearch(_ assignment: Assignment, query: String) -> Bool {
         guard !query.isEmpty else { return true }
         return assignment.title.localizedStandardContains(query)
             || (assignment.course?.name.localizedStandardContains(query) ?? false)

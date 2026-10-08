@@ -208,6 +208,8 @@ nonisolated struct SyllabusTextExtractor {
             CGRect(x: rect.minX, y: pageTop - rect.maxY, width: rect.width, height: rect.height)
         }
 
+        let whitespace = CharacterSet.whitespacesAndNewlines
+        let nonWhitespace = whitespace.inverted
         var words: [TextFragment] = []
         for line in lines {
             guard let text = line.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
@@ -222,9 +224,9 @@ nonisolated struct SyllabusTextExtractor {
             var cursor = 0
             while cursor < lineText.length {
                 let rest = NSRange(location: cursor, length: lineText.length - cursor)
-                let wordRange = lineText.rangeOfCharacter(from: .whitespacesAndNewlines.inverted, options: [], range: rest)
+                let wordRange = lineText.rangeOfCharacter(from: nonWhitespace, options: [], range: rest)
                 guard wordRange.location != NSNotFound else { break }
-                let end = lineText.rangeOfCharacter(from: .whitespacesAndNewlines, options: [], range: NSRange(location: wordRange.location, length: lineText.length - wordRange.location))
+                let end = lineText.rangeOfCharacter(from: whitespace, options: [], range: NSRange(location: wordRange.location, length: lineText.length - wordRange.location))
                 let length = (end.location == NSNotFound ? lineText.length : end.location) - wordRange.location
                 let word = lineText.substring(with: NSRange(location: wordRange.location, length: length))
                 let box = page.selection(for: NSRange(location: range.location + wordRange.location, length: length))?.bounds(for: page)

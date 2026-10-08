@@ -104,9 +104,10 @@ nonisolated struct RuleBasedSyllabusParser {
         // Grading breakdown lines ("Midterm Exam ..... 25%") lend their weight to dated items
         // with the same name. A category line ("Problem Sets ..... 25%") is the category's
         // total, so it isn't copied onto each problem set.
+        let weightedUndated = undated.filter { $0.weight != nil }.map { (title: Self.normalized($0.title), weight: $0.weight) }
         for index in dated.indices where dated[index].weight == nil {
             let title = Self.normalized(dated[index].title)
-            if let match = undated.first(where: { $0.weight != nil && Self.normalized($0.title) == title }) {
+            if let match = weightedUndated.first(where: { $0.title == title }) {
                 dated[index].weight = match.weight
             }
         }

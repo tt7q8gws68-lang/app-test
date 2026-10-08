@@ -4,7 +4,7 @@ import SwiftUI
 struct StreakInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    private let rules: [(icon: AppIcon.Name, text: String)] = [
+    private static let rules: [(icon: AppIcon.Name, text: String)] = [
         (.check, "Finish an assignment before its due time and your streak grows by one."),
         (.streaks, "Finishing late, or letting something go overdue, starts the streak again."),
         (.clock, "Work that isn’t due yet never breaks a streak, even if it’s still open."),
@@ -19,7 +19,7 @@ struct StreakInfoSheet: View {
                     Text("Finish work before its due time to grow your streak. Work added after it was due doesn’t count either way.")
                         .font(.body)
                     GlassGroup {
-                        ForEach(Array(rules.enumerated()), id: \.offset) { index, rule in
+                        ForEach(Array(Self.rules.enumerated()), id: \.offset) { index, rule in
                             if index > 0 { InsetDivider(leading: 52) }
                             HStack(alignment: .top, spacing: 14) {
                                 AppIcon(rule.icon, size: 22)
