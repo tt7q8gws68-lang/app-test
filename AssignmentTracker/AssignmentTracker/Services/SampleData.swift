@@ -10,9 +10,10 @@ enum SampleData {
     static func seedIfNeeded(_ context: ModelContext, defaults: UserDefaults = .standard) {
         guard !defaults.bool(forKey: seededKey) else { return }
         defaults.set(true, forKey: seededKey)
-        // Installs from before this flag existed already have their data.
-        let courseCount = (try? context.fetchCount(FetchDescriptor<Course>())) ?? 0
-        guard courseCount == 0 else { return }
+        // Installs from before this flag existed already have their data. If the count can't be
+        // read, don't risk adding samples to a real store.
+        guard let courseCount = try? context.fetchCount(FetchDescriptor<Course>()),
+              courseCount == 0 else { return }
         insert(into: context)
     }
 
