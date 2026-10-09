@@ -52,7 +52,6 @@ struct AssignmentRow: View {
                             AppIcon(.plan, size: 14)
                                 .foregroundStyle(Palette.accentText)
                                 .accessibilityLabel("Planned for \(planned.plannedLabel())")
-                                .accessibilityHidden(false)
                         }
                         if let tag {
                             Text(tag)

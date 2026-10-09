@@ -80,7 +80,7 @@ struct CandidateEditorSheet: View {
                             RowLabel("Weight", icon: .badge)
                             TextField("e.g. 15%", text: Binding(
                                 get: { draft.weight ?? "" },
-                                set: { draft.weight = $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
+                                set: { draft.weight = $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
                             ))
                             .multilineTextAlignment(.trailing)
                         }
@@ -128,7 +128,7 @@ struct CandidateEditorSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .cancel) {
                         // A brand-new, untouched item is discarded rather than left blank.
-                        if original.title.isEmpty, draft.title.trimmingCharacters(in: .whitespaces).isEmpty { onDelete() }
+                        if original.title.isEmpty, draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { onDelete() }
                         dismiss()
                     } label: {
                         Label("Cancel", appIcon: .close)
@@ -136,7 +136,7 @@ struct CandidateEditorSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .confirm, action: save) { Label("Done", appIcon: .check) }
-                        .disabled(draft.title.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .disabled(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }

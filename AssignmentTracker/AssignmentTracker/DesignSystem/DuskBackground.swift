@@ -14,7 +14,7 @@ struct DuskBackground: View {
         let darkOpacity: Double
     }
 
-    private let glows = [
+    private static let glows = [
         Glow(id: 0, color: Palette.glowTopLeft, diameter: 320, center: UnitPoint(x: 0.18, y: 0.11), lightOpacity: 0.70, darkOpacity: 0.42),
         Glow(id: 1, color: Palette.glowRight, diameter: 300, center: UnitPoint(x: 0.90, y: 0.47), lightOpacity: 0.50, darkOpacity: 0.28),
         Glow(id: 2, color: Palette.glowBottomLeft, diameter: 280, center: UnitPoint(x: 0.26, y: 0.89), lightOpacity: 0.50, darkOpacity: 0.22),
@@ -24,7 +24,7 @@ struct DuskBackground: View {
         GeometryReader { proxy in
             ZStack {
                 Palette.background
-                ForEach(glows) { glow in
+                ForEach(Self.glows) { glow in
                     Circle()
                         .fill(glow.color)
                         .frame(width: glow.diameter, height: glow.diameter)

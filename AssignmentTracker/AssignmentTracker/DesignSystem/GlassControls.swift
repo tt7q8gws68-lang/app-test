@@ -11,7 +11,7 @@ struct GlassCircleButton: View {
     var body: some View {
         Button(action: action) {
             AppIcon(icon, size: isProminent ? 22 : 20, weight: isProminent ? 2.2 : nil)
-                .foregroundStyle(isProminent ? Color.white : Palette.text)
+                .foregroundStyle(isProminent ? Palette.onAccentFill : Palette.text)
                 .frame(width: 44, height: 44)
                 .contentShape(.circle)
         }
@@ -79,18 +79,19 @@ struct ProgressRing<Center: View>: View {
     @ViewBuilder var center: Center
 
     var body: some View {
+        let clamped = min(max(fraction, 0), 1)
         ZStack {
             Group {
                 Circle()
                     .stroke(Palette.track, lineWidth: lineWidth)
                 Circle()
-                    .trim(from: 0, to: min(max(fraction, 0), 1))
+                    .trim(from: 0, to: clamped)
                     .stroke(
                         AngularGradient(
                             colors: [Palette.accent, Palette.ringEnd],
                             center: .center,
                             startAngle: .degrees(0),
-                            endAngle: .degrees(max(360 * fraction, 1))
+                            endAngle: .degrees(max(360 * clamped, 1))
                         ),
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                     )

@@ -159,7 +159,7 @@ struct AssignmentDetailView: View {
                     Text("Mark as complete")
                 }
                 .font(.headline)
-                .foregroundStyle(Color.white)
+                .foregroundStyle(Palette.onAccentFill)
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .contentShape(.capsule)
             }

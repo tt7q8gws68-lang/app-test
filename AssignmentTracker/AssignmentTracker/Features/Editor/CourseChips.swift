@@ -3,7 +3,7 @@ import SwiftUI
 struct CourseChips: View {
     let courses: [Course]
     @Binding var selection: Course?
-    /// When set, a trailing "New Course" chip calls this.
+    /// When set, a trailing "New Class" chip calls this.
     var onAddCourse: (() -> Void)?
 
     var body: some View {

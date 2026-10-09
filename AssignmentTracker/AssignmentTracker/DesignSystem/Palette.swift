@@ -28,6 +28,8 @@ enum Palette {
     static let accentFill = Color(light: 0x5B4BEA, dark: 0x7C6CFF)
     /// Marks drawn on top of an accent or course-colored fill.
     static let onAccent = Color(light: 0xFFFFFF, dark: 0x0D0B1A)
+    /// White in both appearances: content on solid accent fills, and glass highlight strokes.
+    static let onAccentFill = Color.white
 
     // MARK: Status (unchanged from earlier themes)
     static let streakOrange = Color(light: 0xE8700F, dark: 0xFF9A5C)

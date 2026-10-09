@@ -84,6 +84,8 @@ struct RootView: View {
         .task(id: celebration) {
             guard celebration != nil else { return }
             try? await Task.sleep(for: .seconds(3))
+            // A newer celebration (or a tap) cancels this task; don't clear the toast that replaced it.
+            guard !Task.isCancelled else { return }
             withAnimation(.snappy) { celebration = nil }
         }
     }

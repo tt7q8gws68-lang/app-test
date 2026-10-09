@@ -30,11 +30,12 @@ struct WeeksAheadList: View {
     }
 
     var body: some View {
+        let overdueItems = overdue
         VStack(alignment: .leading, spacing: 22) {
-            if !overdue.isEmpty {
+            if !overdueItems.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     SectionHeader("Overdue")
-                    AssignmentGroup(assignments: overdue)
+                    AssignmentGroup(assignments: overdueItems)
                 }
             }
             ForEach(Array(weeks.enumerated()), id: \.element.id) { index, week in

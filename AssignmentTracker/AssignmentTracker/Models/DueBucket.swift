@@ -16,10 +16,6 @@ enum DueBucket: Int, CaseIterable, Identifiable {
         }
     }
 
-    static func of(_ assignment: Assignment, now: Date = .now, calendar: Calendar = .current) -> DueBucket {
-        of(dueDate: assignment.dueDate, isCompleted: assignment.isCompleted, in: WeekWindow(now: now, calendar: calendar))
-    }
-
     /// Bucketing against a window built once, for grouping a whole list.
     nonisolated static func of(dueDate due: Date, isCompleted: Bool, in window: WeekWindow) -> DueBucket {
         if due < window.startOfToday { return isCompleted ? .earlier : .overdue }
@@ -44,6 +40,16 @@ nonisolated struct WeekWindow {
 
     func contains(_ date: Date) -> Bool {
         date >= startOfToday && date < end
+    }
+}
+
+nonisolated extension Calendar {
+    /// Start of the Monday-to-Sunday week containing `date`, whatever this calendar's
+    /// `firstWeekday` is. Other settings (time zone, `minimumDaysInFirstWeek`) are kept.
+    func mondayWeekStart(for date: Date) -> Date? {
+        var mondayCalendar = self
+        mondayCalendar.firstWeekday = 2
+        return mondayCalendar.dateInterval(of: .weekOfYear, for: date)?.start
     }
 }
 
